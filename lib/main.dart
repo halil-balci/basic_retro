@@ -5,13 +5,12 @@ import 'package:provider/provider.dart';
 import 'features/retro/data/firebase_retro_repository.dart';
 import 'features/retro/presentation/welcome_view.dart';
 import 'features/retro/presentation/retro_view_model.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      
-    ),
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp());
 }
