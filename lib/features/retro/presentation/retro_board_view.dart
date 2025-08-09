@@ -17,9 +17,9 @@ class RetroBoardView extends StatefulWidget {
 
 class _RetroBoardViewState extends State<RetroBoardView> {
   final Map<String, TextEditingController> _controllers = {
-    'Start': TextEditingController(),
-    'Stop': TextEditingController(),
-    'Continue': TextEditingController(),
+    'Sad': TextEditingController(),
+    'Mad': TextEditingController(),
+    'Glad': TextEditingController(),
   };
 
   @override
@@ -119,15 +119,15 @@ class _RetroBoardViewState extends State<RetroBoardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _buildCategoryColumn('Start', Colors.green, viewModel),
+                child: _buildCategoryColumn('Sad', Colors.green, viewModel),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildCategoryColumn('Stop', Colors.red, viewModel),
+                child: _buildCategoryColumn('Mad', Colors.red, viewModel),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildCategoryColumn('Continue', Colors.blue, viewModel),
+                child: _buildCategoryColumn('Glad', Colors.blue, viewModel),
               ),
             ],
           ),

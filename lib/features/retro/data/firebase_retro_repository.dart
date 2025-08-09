@@ -29,13 +29,14 @@ class FirebaseRetroRepository implements IRetroRepository {
       
       // Initialize the thoughts subcollection with an empty document to ensure it exists
       final thoughtsRef = sessionRef.collection(_thoughtsCollection);
-      await thoughtsRef.add({
+      /*** dont sent initial message
+       await thoughtsRef.add({
         'content': 'Welcome to your new retro session!',
-        'category': 'Start',
+        'category': 'sad',
         'authorId': creatorId,
         'authorName': 'System',
         'timestamp': now.toIso8601String(),
-      });
+      });***/
       
       return session;
     } catch (e) {

@@ -4,7 +4,7 @@ class RetroThought {
   final String authorId;
   final String authorName;
   final DateTime timestamp;
-  final String category; // 'Start', 'Stop', or 'Continue'
+  final String category; // 'Sad', 'Mad', or 'Glad'
   final List<String> comments;
   final List<String> likes;
   
@@ -29,7 +29,7 @@ class RetroThought {
       timestamp: json['timestamp'] is String 
         ? DateTime.parse(json['timestamp']) 
         : DateTime.fromMillisecondsSinceEpoch(json['timestamp'] as int? ?? 0),
-      category: json['category'] as String? ?? 'Start',
+      category: json['category'] as String? ?? 'Sad',
     );
   }
 

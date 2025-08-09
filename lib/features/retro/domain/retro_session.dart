@@ -19,7 +19,7 @@ class RetroSession {
     this.participants = const [],
     this.activeUsers = const {},
     this.isActive = true,
-    this.columns = const ['Start', 'Stop', 'Continue'],
+    this.columns = const ['Sad', 'Mad', 'Glad'],
     this.thoughts = const [],
   });
 
@@ -32,7 +32,7 @@ class RetroSession {
       participants: List<String>.from(json['participants'] ?? []),
       activeUsers: Map<String, String>.from(json['activeUsers'] ?? {}),
       isActive: json['isActive'] as bool? ?? true,
-      columns: List<String>.from(json['columns'] ?? ['Start', 'Stop', 'Continue']),
+      columns: List<String>.from(json['columns'] ?? ['Sad', 'Mad', 'Glad']),
       thoughts: (json['thoughts'] as List<dynamic>?)
           ?.map((e) => RetroThought.fromJson(e as Map<String, dynamic>))
           .toList() ?? [],

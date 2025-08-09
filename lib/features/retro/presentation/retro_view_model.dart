@@ -18,9 +18,9 @@ class RetroViewModel extends ChangeNotifier {
   RetroSession? get currentSession => _currentSession;
 
   Map<String, List<RetroThought>> _thoughtsByCategory = {
-    'Start': [],
-    'Stop': [],
-    'Continue': [],
+    'Sad': [],
+    'Mad': [],
+    'Glad': [],
   };
   Map<String, List<RetroThought>> get thoughtsByCategory => _thoughtsByCategory;
 
@@ -216,9 +216,9 @@ class RetroViewModel extends ChangeNotifier {
 
   void _updateThoughtsByCategory(List<RetroThought> thoughts) {
     final newThoughtsByCategory = {
-      'Start': <RetroThought>[],
-      'Stop': <RetroThought>[],
-      'Continue': <RetroThought>[],
+      'Sad': <RetroThought>[],
+      'Mad': <RetroThought>[],
+      'Glad': <RetroThought>[],
     };
 
     for (final thought in thoughts) {
@@ -232,9 +232,9 @@ class RetroViewModel extends ChangeNotifier {
 
   void _clearThoughts() {
     _thoughtsByCategory = {
-      'Start': [],
-      'Stop': [],
-      'Continue': [],
+      'Sad': [],
+      'Mad': [],
+      'Glad': [],
     };
   }
 
