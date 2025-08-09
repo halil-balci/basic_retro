@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../domain/retro_thought.dart';
 import '../domain/retro_session.dart';
+import '../domain/retro_phase.dart';
+import '../domain/thought_group.dart';
 import '../domain/i_retro_repository.dart';
+import '../../../core/constants/retro_constants.dart';
 
 class RetroViewModel extends ChangeNotifier {
   final IRetroRepository _repository;
@@ -17,11 +20,7 @@ class RetroViewModel extends ChangeNotifier {
   RetroSession? _currentSession;
   RetroSession? get currentSession => _currentSession;
 
-  Map<String, List<RetroThought>> _thoughtsByCategory = {
-    'Sad': [],
-    'Mad': [],
-    'Glad': [],
-  };
+  Map<String, List<RetroThought>> _thoughtsByCategory = RetroConstants.createEmptyCategoryMap<RetroThought>();
   Map<String, List<RetroThought>> get thoughtsByCategory => _thoughtsByCategory;
 
   bool _isLoading = false;
@@ -33,7 +32,14 @@ class RetroViewModel extends ChangeNotifier {
     _loadUserSessions();
   }
 
-  get thoughts => null;
+  List<RetroThought> get thoughts {
+    // Return all thoughts from all categories
+    final allThoughts = <RetroThought>[];
+    for (final categoryThoughts in _thoughtsByCategory.values) {
+      allThoughts.addAll(categoryThoughts);
+    }
+    return allThoughts;
+  }
 
   void _initializeUserInfo() {
     // In a real app, you would get this from SharedPreferences or secure storage
@@ -143,6 +149,8 @@ class RetroViewModel extends ChangeNotifier {
           
           _clearThoughts();
           _subscribeToSessionUpdates();
+          
+          // Manually trigger a notification to ensure UI updates
           notifyListeners();
         } else {
           debugPrint('Session not found: $sessionId');
@@ -211,15 +219,55 @@ class RetroViewModel extends ChangeNotifier {
           notifyListeners();
         },
       );
+
+      // Subscribe to session changes for real-time phase updates
+      _subscribeToSessionChanges();
+
+      // Subscribe to groups if we have the method available
+      try {
+        _repository.getSessionGroups(_currentSessionId!).listen(
+          (groups) {
+            debugPrint('Received ${groups.length} groups');
+            if (_currentSessionId != null && _currentSession != null) {
+              _currentSession = _currentSession!.copyWith(groups: groups);
+              notifyListeners();
+            }
+          },
+          onError: (error) {
+            debugPrint('Error loading groups: $error');
+          },
+        );
+      } catch (e) {
+        debugPrint('Groups subscription not available: $e');
+      }
     }
   }
 
+  void _subscribeToSessionChanges() {
+    if (_currentSessionId == null) return;
+    
+    // Listen to session document changes for phase updates
+    _repository.getSessionStream(_currentSessionId!).listen(
+      (session) {
+        if (session != null && _currentSessionId != null) {
+          final oldPhase = _currentSession?.currentPhase;
+          _currentSession = session;
+          
+          // If phase changed, notify listeners
+          if (oldPhase != session.currentPhase) {
+            debugPrint('Phase changed from $oldPhase to ${session.currentPhase}');
+          }
+          notifyListeners();
+        }
+      },
+      onError: (error) {
+        debugPrint('Error loading session updates: $error');
+      },
+    );
+  }
+
   void _updateThoughtsByCategory(List<RetroThought> thoughts) {
-    final newThoughtsByCategory = {
-      'Sad': <RetroThought>[],
-      'Mad': <RetroThought>[],
-      'Glad': <RetroThought>[],
-    };
+    final newThoughtsByCategory = RetroConstants.createEmptyCategoryMap<RetroThought>();
 
     for (final thought in thoughts) {
       if (newThoughtsByCategory.containsKey(thought.category)) {
@@ -228,14 +276,15 @@ class RetroViewModel extends ChangeNotifier {
     }
 
     _thoughtsByCategory = newThoughtsByCategory;
+    
+    // Also update the current session's thoughts list
+    if (_currentSession != null) {
+      _currentSession = _currentSession!.copyWith(thoughts: thoughts);
+    }
   }
 
   void _clearThoughts() {
-    _thoughtsByCategory = {
-      'Sad': [],
-      'Mad': [],
-      'Glad': [],
-    };
+    _thoughtsByCategory = RetroConstants.createEmptyCategoryMap<RetroThought>();
   }
 
   Future<void> leaveSession() async {
@@ -256,4 +305,189 @@ class RetroViewModel extends ChangeNotifier {
   void toggleLike(String id) {}
 
   void addComment(String id, String text) {}
+
+  // Phase Management
+  Future<void> advancePhase() async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    if (!_currentSession!.canAdvancePhase) {
+      throw Exception('Cannot advance phase: conditions not met');
+    }
+
+    final nextPhase = _currentSession!.nextPhase;
+    
+    try {
+      await _repository.updateSessionPhase(_currentSessionId!, nextPhase);
+      
+      // If advancing to voting phase, initialize user votes
+      if (nextPhase == RetroPhase.voting) {
+        await _initializeUserVotes();
+      }
+      
+      // If advancing to grouping phase, create initial groups from thoughts
+      if (nextPhase == RetroPhase.grouping) {
+        await _createInitialGroups();
+      }
+      
+    } catch (e) {
+      debugPrint('Error advancing phase: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _initializeUserVotes() async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    final userVotes = <String, int>{};
+    for (final userId in _currentSession!.activeUsers.keys) {
+      userVotes[userId] = 3; // Each user gets 3 votes
+    }
+    
+    await _repository.updateUserVotes(_currentSessionId!, userVotes);
+  }
+
+  Future<void> _createInitialGroups() async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    final groups = <ThoughtGroup>[];
+    int groupIndex = 0;
+    
+    // Create individual groups for each thought initially
+    for (final thought in _currentSession!.thoughts) {
+      final group = ThoughtGroup(
+        id: 'group_${DateTime.now().millisecondsSinceEpoch}_$groupIndex',
+        name: 'Group ${groupIndex + 1}',
+        thoughts: [thought],
+        sessionId: _currentSessionId!,
+        x: (groupIndex % 3) * 200.0, // Spread them out
+        y: (groupIndex ~/ 3) * 150.0,
+      );
+      groups.add(group);
+      groupIndex++;
+    }
+    
+    await _repository.updateSessionGroups(_currentSessionId!, groups);
+  }
+
+  // Group Management
+  Future<void> createGroup(String name, List<RetroThought> thoughts, double x, double y) async {
+    if (_currentSessionId == null) return;
+    
+    final group = ThoughtGroup(
+      id: 'group_${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      thoughts: thoughts,
+      sessionId: _currentSessionId!,
+      x: x,
+      y: y,
+    );
+    
+    await _repository.addGroup(_currentSessionId!, group);
+  }
+
+  Future<void> updateGroupPosition(String groupId, double x, double y) async {
+    if (_currentSessionId == null) return;
+    await _repository.updateGroupPosition(_currentSessionId!, groupId, x, y);
+  }
+
+  Future<void> mergeGroups(String targetGroupId, String sourceGroupId) async {
+    if (_currentSessionId == null) return;
+    await _repository.mergeGroups(_currentSessionId!, targetGroupId, sourceGroupId);
+  }
+
+  Future<void> updateGroupName(String groupId, String newName) async {
+    if (_currentSessionId == null) return;
+    await _repository.updateGroupName(_currentSessionId!, groupId, newName);
+  }
+
+  Future<void> clearGroups() async {
+    if (_currentSessionId == null) return;
+    await _repository.clearGroups(_currentSessionId!);
+  }
+
+  // Initialize groups from thoughts (for grouping phase)
+  Future<void> initializeGroupsFromThoughts() async {
+    if (_currentSessionId == null) return;
+    
+    // Clear existing groups first
+    await clearGroups();
+    
+    final allThoughts = <RetroThought>[];
+    for (final categoryThoughts in _thoughtsByCategory.values) {
+      allThoughts.addAll(categoryThoughts);
+    }
+    
+    // Create a group for each thought
+    for (int i = 0; i < allThoughts.length; i++) {
+      final thought = allThoughts[i];
+      final group = ThoughtGroup(
+        id: 'group_${thought.id}',
+        name: 'Item ${i + 1}',
+        thoughts: [thought],
+        sessionId: _currentSessionId!,
+        x: (i % 3) * 220.0 + 20,
+        y: (i ~/ 3) * 160.0 + 20,
+      );
+      
+      await _repository.addGroup(_currentSessionId!, group);
+    }
+  }
+
+  // Voting Management
+  Future<void> voteForGroup(String groupId) async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    final remainingVotes = _currentSession!.getUserRemainingVotes(_currentUserId);
+    if (remainingVotes <= 0) {
+      throw Exception('No votes remaining');
+    }
+    
+    await _repository.voteForGroup(_currentSessionId!, groupId, _currentUserId);
+  }
+
+  Future<void> removeVoteFromGroup(String groupId) async {
+    if (_currentSessionId == null) return;
+    await _repository.removeVoteFromGroup(_currentSessionId!, groupId, _currentUserId);
+  }
+
+  // Discussion Management
+  Future<void> nextDiscussionGroup() async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    final sorted = _currentSession!.sortedGroupsByVotes;
+    final nextIndex = _currentSession!.currentDiscussionGroupIndex + 1;
+    
+    if (nextIndex < sorted.length) {
+      await _repository.updateDiscussionGroupIndex(_currentSessionId!, nextIndex);
+    }
+  }
+
+  Future<void> previousDiscussionGroup() async {
+    if (_currentSessionId == null || _currentSession == null) return;
+    
+    final prevIndex = _currentSession!.currentDiscussionGroupIndex - 1;
+    
+    if (prevIndex >= 0) {
+      await _repository.updateDiscussionGroupIndex(_currentSessionId!, prevIndex);
+    }
+  }
+
+  // Getters for UI
+  bool get canAdvancePhase => _currentSession?.canAdvancePhase ?? false;
+  RetroPhase get currentPhase => _currentSession?.currentPhase ?? RetroPhase.editing;
+  List<ThoughtGroup> get currentGroups => _currentSession?.groups ?? [];
+  List<ThoughtGroup> get sortedGroupsByVotes => _currentSession?.sortedGroupsByVotes ?? [];
+  ThoughtGroup? get currentDiscussionGroup => _currentSession?.currentDiscussionGroup;
+  
+  int getUserRemainingVotes() {
+    return _currentSession?.getUserRemainingVotes(_currentUserId) ?? 3;
+  }
+
+  bool shouldBlurThought(RetroThought thought) {
+    return currentPhase == RetroPhase.editing && thought.authorId != _currentUserId;
+  }
+
+  String getCurrentUserId() {
+    return _currentUserId;
+  }
 }

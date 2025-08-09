@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../domain/retro_thought.dart';
 import '../domain/retro_session.dart';
+import '../domain/retro_phase.dart';
+import '../domain/thought_group.dart';
 import '../domain/i_retro_repository.dart';
 
 class FirebaseRetroRepository implements IRetroRepository {
@@ -28,15 +30,7 @@ class FirebaseRetroRepository implements IRetroRepository {
       await sessionRef.set(session.toJson());
       
       // Initialize the thoughts subcollection with an empty document to ensure it exists
-      final thoughtsRef = sessionRef.collection(_thoughtsCollection);
-      /*** dont sent initial message
-       await thoughtsRef.add({
-        'content': 'Welcome to your new retro session!',
-        'category': 'sad',
-        'authorId': creatorId,
-        'authorName': 'System',
-        'timestamp': now.toIso8601String(),
-      });***/
+      // Note: We don't add any initial messages as per requirements
       
       return session;
     } catch (e) {
@@ -103,20 +97,39 @@ class FirebaseRetroRepository implements IRetroRepository {
     }
   }
 
+  // Add stream method for session changes
+  Stream<RetroSession?> getSessionStream(String sessionId) {
+    return _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .snapshots()
+        .map((snapshot) {
+          if (!snapshot.exists || snapshot.data() == null) return null;
+          
+          return RetroSession.fromJson({
+            ...snapshot.data()!,
+            'id': snapshot.id,
+          });
+        });
+  }
+
   @override
   Stream<List<RetroSession>> getUserSessions(String userId) {
     return _firestore
         .collection(_sessionsCollection)
         .where('participants', arrayContains: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          final sessions = snapshot.docs.map((doc) {
             return RetroSession.fromJson({
               ...doc.data(),
               'id': doc.id,
             });
           }).toList();
+          
+          // Sort by createdAt manually to avoid index requirement
+          sessions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return sessions;
         });
   }
 
@@ -234,6 +247,282 @@ class FirebaseRetroRepository implements IRetroRepository {
           .delete();
     } catch (e) {
       debugPrint('Error in deleteThought: $e');
+      rethrow;
+    }
+  }
+
+  // Phase management
+  @override
+  Future<void> updateSessionPhase(String sessionId, RetroPhase phase) async {
+    try {
+      await _firestore.collection(_sessionsCollection).doc(sessionId).update({
+        'currentPhase': phase.name,
+      });
+    } catch (e) {
+      debugPrint('Error in updateSessionPhase: $e');
+      rethrow;
+    }
+  }
+
+  // Group management
+  @override
+  Future<void> addGroup(String sessionId, ThoughtGroup group) async {
+    try {
+      await _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .doc(group.id)
+          .set(group.toJson());
+    } catch (e) {
+      debugPrint('Error in addGroup: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateSessionGroups(String sessionId, List<ThoughtGroup> groups) async {
+    try {
+      final batch = _firestore.batch();
+      final groupsRef = _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups');
+
+      // Clear existing groups
+      final existingGroups = await groupsRef.get();
+      for (final doc in existingGroups.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Add new groups
+      for (final group in groups) {
+        batch.set(groupsRef.doc(group.id), group.toJson());
+      }
+
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error in updateSessionGroups: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateGroupPosition(String sessionId, String groupId, double x, double y) async {
+    try {
+      await _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .doc(groupId)
+          .update({
+        'x': x,
+        'y': y,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error in updateGroupPosition: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> mergeGroups(String sessionId, String targetGroupId, String sourceGroupId) async {
+    try {
+      final batch = _firestore.batch();
+      final groupsRef = _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups');
+
+      // Get both groups
+      final targetDoc = await groupsRef.doc(targetGroupId).get();
+      final sourceDoc = await groupsRef.doc(sourceGroupId).get();
+
+      if (!targetDoc.exists || !sourceDoc.exists) {
+        throw Exception('One or both groups do not exist');
+      }
+
+      final targetGroup = ThoughtGroup.fromJson(targetDoc.data()!);
+      final sourceGroup = ThoughtGroup.fromJson(sourceDoc.data()!);
+
+      // Merge thoughts
+      final mergedThoughts = [...targetGroup.thoughts, ...sourceGroup.thoughts];
+      final updatedGroup = targetGroup.copyWith(
+        thoughts: mergedThoughts,
+        updatedAt: DateTime.now(),
+      );
+
+      // Update target group and delete source group
+      batch.set(groupsRef.doc(targetGroupId), updatedGroup.toJson());
+      batch.delete(groupsRef.doc(sourceGroupId));
+
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error in mergeGroups: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateGroupName(String sessionId, String groupId, String newName) async {
+    try {
+      await _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .doc(groupId)
+          .update({
+        'name': newName,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error in updateGroupName: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> clearGroups(String sessionId) async {
+    try {
+      final groupsSnapshot = await _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .get();
+
+      final batch = _firestore.batch();
+      for (final doc in groupsSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error in clearGroups: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Stream<List<ThoughtGroup>> getSessionGroups(String sessionId) {
+    return _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection('groups')
+        .orderBy('createdAt')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return ThoughtGroup.fromJson({
+              ...doc.data(),
+              'id': doc.id,
+            });
+          }).toList();
+        });
+  }
+
+  // Voting management
+  @override
+  Future<void> updateUserVotes(String sessionId, Map<String, int> userVotes) async {
+    try {
+      await _firestore.collection(_sessionsCollection).doc(sessionId).update({
+        'userVotes': userVotes,
+      });
+    } catch (e) {
+      debugPrint('Error in updateUserVotes: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> voteForGroup(String sessionId, String groupId, String userId) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Update group votes
+      final groupRef = _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .doc(groupId);
+
+      final groupDoc = await groupRef.get();
+      if (!groupDoc.exists) {
+        throw Exception('Group does not exist');
+      }
+
+      final group = ThoughtGroup.fromJson(groupDoc.data()!);
+      final updatedGroup = group.addVote(userId);
+
+      batch.set(groupRef, updatedGroup.toJson());
+
+      // Update user remaining votes
+      final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+      final sessionDoc = await sessionRef.get();
+      final sessionData = sessionDoc.data();
+      final userVotes = Map<String, int>.from(sessionData?['userVotes'] ?? {});
+      final currentVotes = userVotes[userId] ?? 3;
+      userVotes[userId] = currentVotes > 0 ? currentVotes - 1 : 0;
+
+      batch.update(sessionRef, {'userVotes': userVotes});
+
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error in voteForGroup: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> removeVoteFromGroup(String sessionId, String groupId, String userId) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Update group votes
+      final groupRef = _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .collection('groups')
+          .doc(groupId);
+
+      final groupDoc = await groupRef.get();
+      if (!groupDoc.exists) {
+        throw Exception('Group does not exist');
+      }
+
+      final group = ThoughtGroup.fromJson(groupDoc.data()!);
+      if (!group.hasUserVoted(userId)) {
+        throw Exception('User has not voted for this group');
+      }
+
+      final updatedGroup = group.removeVote(userId);
+      batch.set(groupRef, updatedGroup.toJson());
+
+      // Update user remaining votes
+      final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+      final sessionDoc = await sessionRef.get();
+      final sessionData = sessionDoc.data();
+      final userVotes = Map<String, int>.from(sessionData?['userVotes'] ?? {});
+      final currentVotes = userVotes[userId] ?? 0;
+      userVotes[userId] = currentVotes + 1;
+
+      batch.update(sessionRef, {'userVotes': userVotes});
+
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error in removeVoteFromGroup: $e');
+      rethrow;
+    }
+  }
+
+  // Discussion management
+  @override
+  Future<void> updateDiscussionGroupIndex(String sessionId, int index) async {
+    try {
+      await _firestore.collection(_sessionsCollection).doc(sessionId).update({
+        'currentDiscussionGroupIndex': index,
+      });
+    } catch (e) {
+      debugPrint('Error in updateDiscussionGroupIndex: $e');
       rethrow;
     }
   }
