@@ -49,30 +49,51 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         }
 
         return Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
           appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1E293B),
             title: Row(
               children: [
+                Icon(
+                  Icons.dashboard_rounded,
+                  color: const Color(0xFF4F46E5),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  'Retro: ${viewModel.currentSession?.name ?? ""}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  viewModel.currentSession?.name ?? "",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 _buildActiveUsers(viewModel),
-                const SizedBox(width: 16),
+                const Spacer(),
                 _buildPhaseIndicator(viewModel),
               ],
             ),
             actions: [
               if (viewModel.canAdvancePhase)
                 Container(
-                  margin: const EdgeInsets.only(right: 8),
+                  margin: const EdgeInsets.only(right: 16),
                   child: ElevatedButton.icon(
                     onPressed: () => _showAdvancePhaseConfirmation(viewModel),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: Text('Next: ${viewModel.currentSession!.nextPhase.displayName}'),
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: Text(
+                      'Next: ${viewModel.currentSession!.nextPhase.displayName}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _getPhaseColor(viewModel.currentSession!.nextPhase),
                       foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 )
@@ -109,25 +130,6 @@ class _RetroBoardViewState extends State<RetroBoardView> {
           ),
           body: Column(
             children: [
-              // Debug Phase Info (remove in production)
-              if (true) // Set to false in production
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(8),
-                  color: Colors.grey[100],
-                  child: Consumer<RetroViewModel>(
-                    builder: (context, viewModel, child) {
-                      return Text(
-                        'Current Phase: ${viewModel.currentPhase.displayName} | '
-                        'Thoughts: ${viewModel.thoughtsByCategory.values.expand((x) => x).length} | '
-                        'Groups: ${viewModel.currentGroups.length} | '
-                        'Can Advance: ${viewModel.canAdvancePhase}',
-                        style: const TextStyle(fontSize: 12),
-                        textAlign: TextAlign.center,
-                      );
-                    },
-                  ),
-                ),
               Expanded(
                 child: viewModel.isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -142,54 +144,64 @@ class _RetroBoardViewState extends State<RetroBoardView> {
 
   Widget _buildActiveUsers(RetroViewModel viewModel) {
     final activeUsers = viewModel.currentSession?.activeUsers ?? {};
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.person, size: 16),
-        const SizedBox(width: 4),
-        Text('${activeUsers.length} active'),
-        const SizedBox(width: 8),
-        if (activeUsers.isNotEmpty)
-          Tooltip(
-            message: activeUsers.values.join(', '),
-            child: const Icon(Icons.info_outline, size: 16),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10B981).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.people_rounded,
+            size: 14,
+            color: const Color(0xFF10B981),
           ),
-      ],
+          const SizedBox(width: 4),
+          Text(
+            '${activeUsers.length}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF10B981),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPhaseIndicator(RetroViewModel viewModel) {
     final phase = viewModel.currentPhase;
-    Color phaseColor;
+    final phaseColor = _getPhaseColor(phase);
     
-    switch (phase) {
-      case RetroPhase.editing:
-        phaseColor = Colors.amber;
-        break;
-      case RetroPhase.grouping:
-        phaseColor = Colors.orange;
-        break;
-      case RetroPhase.voting:
-        phaseColor = Colors.purple;
-        break;
-      case RetroPhase.discuss:
-        phaseColor = Colors.teal;
-        break;
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: phaseColor,
-        borderRadius: BorderRadius.circular(16),
+        color: phaseColor.withOpacity(0.1),
+        border: Border.all(color: phaseColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        phase.displayName,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _getPhaseIcon(phase),
+            size: 14,
+            color: phaseColor,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            phase.displayName,
+            style: TextStyle(
+              color: phaseColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -210,13 +222,13 @@ class _RetroBoardViewState extends State<RetroBoardView> {
   Color _getPhaseColor(RetroPhase phase) {
     switch (phase) {
       case RetroPhase.editing:
-        return Colors.amber;
+        return const Color(0xFF10B981); // Green
       case RetroPhase.grouping:
-        return Colors.orange;
+        return const Color(0xFF3B82F6); // Blue
       case RetroPhase.voting:
-        return Colors.purple;
+        return const Color(0xFF8B5CF6); // Purple
       case RetroPhase.discuss:
-        return Colors.teal;
+        return const Color(0xFF06B6D4); // Cyan
     }
   }
 
@@ -293,13 +305,13 @@ class _RetroBoardViewState extends State<RetroBoardView> {
   IconData _getPhaseIcon(RetroPhase phase) {
     switch (phase) {
       case RetroPhase.editing:
-        return Icons.edit;
+        return Icons.edit_rounded;
       case RetroPhase.grouping:
-        return Icons.group_work;
+        return Icons.group_work_rounded;
       case RetroPhase.voting:
-        return Icons.how_to_vote;
+        return Icons.how_to_vote_rounded;
       case RetroPhase.discuss:
-        return Icons.forum;
+        return Icons.forum_rounded;
     }
   }
 

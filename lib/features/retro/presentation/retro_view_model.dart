@@ -480,12 +480,8 @@ class RetroViewModel extends ChangeNotifier {
     final sorted = _currentSession!.sortedGroupsByVotes;
     final nextIndex = _currentSession!.currentDiscussionGroupIndex + 1;
     
-    debugPrint('nextDiscussionGroup: current index = ${_currentSession!.currentDiscussionGroupIndex}, next index = $nextIndex, total groups = ${sorted.length}');
-    
     if (nextIndex < sorted.length) {
       await _repository.updateDiscussionGroupIndex(_currentSessionId!, nextIndex);
-    } else {
-      debugPrint('Cannot advance: nextIndex ($nextIndex) >= sorted.length (${sorted.length})');
     }
   }
 
@@ -494,12 +490,8 @@ class RetroViewModel extends ChangeNotifier {
     
     final prevIndex = _currentSession!.currentDiscussionGroupIndex - 1;
     
-    debugPrint('previousDiscussionGroup: current index = ${_currentSession!.currentDiscussionGroupIndex}, prev index = $prevIndex');
-    
     if (prevIndex >= 0) {
       await _repository.updateDiscussionGroupIndex(_currentSessionId!, prevIndex);
-    } else {
-      debugPrint('Cannot go back: prevIndex ($prevIndex) < 0');
     }
   }
 
