@@ -45,11 +45,21 @@ class DiscussPhaseWidget extends StatelessWidget {
                 child: _buildCurrentGroupDisplay(currentGroup),
               ),
             ] else
-              const Expanded(
+              Expanded(
                 child: Center(
-                  child: Text(
-                    'No groups available for discussion.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'No groups available for discussion.',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => _createGroupsFromThoughts(viewModel),
+                        child: const Text('Create Groups from Thoughts'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -83,10 +93,13 @@ class DiscussPhaseWidget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                LinearProgressIndicator(
-                  value: totalGroups > 0 ? (currentIndex + 1) / totalGroups : 0,
-                  backgroundColor: Colors.grey[300],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.teal),
+                SizedBox(
+                  width: 200,
+                  child: LinearProgressIndicator(
+                    value: totalGroups > 0 ? (currentIndex + 1) / totalGroups : 0,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.teal),
+                  ),
                 ),
               ],
             ),
@@ -257,6 +270,15 @@ class DiscussPhaseWidget extends StatelessWidget {
         return Colors.blue;
       default:
         return Colors.grey;
+    }
+  }
+
+  Future<void> _createGroupsFromThoughts(RetroViewModel viewModel) async {
+    try {
+      // Create groups from current thoughts
+      await viewModel.initializeGroupsFromThoughts();
+    } catch (e) {
+      debugPrint('Error creating groups from thoughts: $e');
     }
   }
 }

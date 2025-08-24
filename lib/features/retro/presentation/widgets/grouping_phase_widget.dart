@@ -41,8 +41,8 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
           id: thought.id,
           thoughts: [thought],
           position: Offset(
-            col * 200.0 + 20,
-            row * 120.0 + 20,
+            col * 160.0 + 16,
+            row * 100.0 + 16,
           ),
         );
       }).toList();
@@ -143,7 +143,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
           child: _buildGroupCard(item, isDragging: true),
         ),
         childWhenDragging: Container(
-          width: 180,
+          width: 140,
           height: _calculateHeight(item),
           decoration: BoxDecoration(
             color: Colors.grey.shade200,
@@ -190,10 +190,10 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
     final color = isHovered ? Colors.blue.shade50 : Colors.white;
     
     return Container(
-      width: 180,
+      width: 140,
       constraints: BoxConstraints(
-        minHeight: 100,
-        maxHeight: 200,
+        minHeight: 80,
+        maxHeight: 160,
       ),
       decoration: BoxDecoration(
         color: color,
@@ -217,7 +217,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(8.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +231,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
                       _getGroupName(item),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ),
@@ -253,13 +253,13 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Flexible(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: item.thoughts.take(3).map((thought) => Container(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  padding: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.only(bottom: 3),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: _getCategoryColor(thought.category).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -269,7 +269,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
                   ),
                   child: Text(
                     thought.content,
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(fontSize: 10),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -278,11 +278,11 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
             ),
             if (item.thoughts.length > 3)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: 3),
                 child: Text(
                   '+${item.thoughts.length - 3} more...',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.grey.shade600,
                     fontStyle: FontStyle.italic,
                   ),
@@ -308,7 +308,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
   }
 
   double _calculateHeight(GroupItem item) {
-    return 100 + (item.thoughts.length.clamp(0, 3) * 30).toDouble();
+    return 80 + (item.thoughts.length.clamp(0, 3) * 20).toDouble();
   }
 
   String _getGroupName(GroupItem item) {

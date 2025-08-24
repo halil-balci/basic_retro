@@ -227,7 +227,7 @@ class RetroViewModel extends ChangeNotifier {
       try {
         _repository.getSessionGroups(_currentSessionId!).listen(
           (groups) {
-            debugPrint('Received ${groups.length} groups');
+            debugPrint('Received ${groups.length} groups from subscription');
             if (_currentSessionId != null && _currentSession != null) {
               _currentSession = _currentSession!.copyWith(groups: groups);
               notifyListeners();
@@ -251,7 +251,10 @@ class RetroViewModel extends ChangeNotifier {
       (session) {
         if (session != null && _currentSessionId != null) {
           final oldPhase = _currentSession?.currentPhase;
-          _currentSession = session;
+          
+          // Preserve existing groups when updating session
+          final existingGroups = _currentSession?.groups ?? [];
+          _currentSession = session.copyWith(groups: existingGroups);
           
           // If phase changed, notify listeners
           if (oldPhase != session.currentPhase) {
@@ -319,9 +322,23 @@ class RetroViewModel extends ChangeNotifier {
     try {
       await _repository.updateSessionPhase(_currentSessionId!, nextPhase);
       
-      // If advancing to voting phase, initialize user votes
+      // If advancing to voting phase, initialize user votes and ensure groups exist
       if (nextPhase == RetroPhase.voting) {
         await _initializeUserVotes();
+        // If no groups exist, create them from thoughts
+        if (currentGroups.isEmpty) {
+          await _createInitialGroups();
+        }
+      }
+      
+      // If advancing to discuss phase, ensure groups exist and reset discussion index
+      if (nextPhase == RetroPhase.discuss) {
+        // If no groups exist, create them from thoughts
+        if (currentGroups.isEmpty) {
+          await _createInitialGroups();
+        }
+        // Reset discussion group index to 0
+        await _repository.updateDiscussionGroupIndex(_currentSessionId!, 0);
       }
       
       // If advancing to grouping phase, create initial groups from thoughts
@@ -352,8 +369,14 @@ class RetroViewModel extends ChangeNotifier {
     final groups = <ThoughtGroup>[];
     int groupIndex = 0;
     
+    // Get all thoughts from _thoughtsByCategory instead of _currentSession.thoughts
+    final allThoughts = <RetroThought>[];
+    for (final categoryThoughts in _thoughtsByCategory.values) {
+      allThoughts.addAll(categoryThoughts);
+    }
+    
     // Create individual groups for each thought initially
-    for (final thought in _currentSession!.thoughts) {
+    for (final thought in allThoughts) {
       final group = ThoughtGroup(
         id: 'group_${DateTime.now().millisecondsSinceEpoch}_$groupIndex',
         name: 'Group ${groupIndex + 1}',
@@ -457,8 +480,12 @@ class RetroViewModel extends ChangeNotifier {
     final sorted = _currentSession!.sortedGroupsByVotes;
     final nextIndex = _currentSession!.currentDiscussionGroupIndex + 1;
     
+    debugPrint('nextDiscussionGroup: current index = ${_currentSession!.currentDiscussionGroupIndex}, next index = $nextIndex, total groups = ${sorted.length}');
+    
     if (nextIndex < sorted.length) {
       await _repository.updateDiscussionGroupIndex(_currentSessionId!, nextIndex);
+    } else {
+      debugPrint('Cannot advance: nextIndex ($nextIndex) >= sorted.length (${sorted.length})');
     }
   }
 
@@ -467,8 +494,12 @@ class RetroViewModel extends ChangeNotifier {
     
     final prevIndex = _currentSession!.currentDiscussionGroupIndex - 1;
     
+    debugPrint('previousDiscussionGroup: current index = ${_currentSession!.currentDiscussionGroupIndex}, prev index = $prevIndex');
+    
     if (prevIndex >= 0) {
       await _repository.updateDiscussionGroupIndex(_currentSessionId!, prevIndex);
+    } else {
+      debugPrint('Cannot go back: prevIndex ($prevIndex) < 0');
     }
   }
 

@@ -133,9 +133,13 @@ class RetroSession {
 
   ThoughtGroup? get currentDiscussionGroup {
     final sorted = sortedGroupsByVotes;
-    if (currentDiscussionGroupIndex < sorted.length) {
-      return sorted[currentDiscussionGroupIndex];
+    print('currentDiscussionGroup: currentDiscussionGroupIndex = $currentDiscussionGroupIndex, sorted.length = ${sorted.length}');
+    if (currentDiscussionGroupIndex < sorted.length && currentDiscussionGroupIndex >= 0) {
+      final group = sorted[currentDiscussionGroupIndex];
+      print('currentDiscussionGroup: returning group "${group.name}" with ${group.votes} votes');
+      return group;
     }
+    print('currentDiscussionGroup: returning null (index out of bounds)');
     return null;
   }
 

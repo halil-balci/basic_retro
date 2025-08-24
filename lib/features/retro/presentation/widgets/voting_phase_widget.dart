@@ -47,10 +47,20 @@ class VotingPhaseWidget extends StatelessWidget {
     final groups = viewModel.currentGroups;
     
     if (groups.isEmpty) {
-      return const Center(
-        child: Text(
-          'No groups available for voting.',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'No groups available for voting.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _createGroupsFromThoughts(viewModel),
+              child: const Text('Create Groups from Thoughts'),
+            ),
+          ],
         ),
       );
     }
@@ -194,6 +204,15 @@ class VotingPhaseWidget extends StatelessWidget {
     } catch (e) {
       // Handle error - maybe show a snackbar
       debugPrint('Error voting: $e');
+    }
+  }
+
+  Future<void> _createGroupsFromThoughts(RetroViewModel viewModel) async {
+    try {
+      // Create groups from current thoughts
+      await viewModel.initializeGroupsFromThoughts();
+    } catch (e) {
+      debugPrint('Error creating groups from thoughts: $e');
     }
   }
 }
