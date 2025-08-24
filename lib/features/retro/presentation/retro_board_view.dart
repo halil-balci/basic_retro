@@ -6,7 +6,7 @@ import 'widgets/editing_phase_widget.dart';
 import 'widgets/grouping_phase_widget.dart';
 import 'widgets/voting_phase_widget.dart';
 import 'widgets/discuss_phase_widget.dart';
-import '../../../core/constants/retro_constants.dart';
+import 'widgets/finish_phase_widget.dart';
 
 class RetroBoardView extends StatefulWidget {
   final String sessionId;
@@ -48,6 +48,11 @@ class _RetroBoardViewState extends State<RetroBoardView> {
           );
         }
 
+  final isDiscussPhase = viewModel.currentPhase == RetroPhase.discuss;
+  final sortedGroups = viewModel.sortedGroupsByVotes;
+  final currentIndex = viewModel.currentSession?.currentDiscussionGroupIndex ?? 0;
+  final isLastGroup = isDiscussPhase && currentIndex == sortedGroups.length - 1 && sortedGroups.isNotEmpty;
+
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
           appBar: AppBar(
@@ -76,7 +81,30 @@ class _RetroBoardViewState extends State<RetroBoardView> {
               ],
             ),
             actions: [
-              if (viewModel.canAdvancePhase)
+              if (isDiscussPhase)
+                Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  child: ElevatedButton.icon(
+                    onPressed: isLastGroup && viewModel.canAdvancePhase
+                        ? () => _showAdvancePhaseConfirmation(viewModel)
+                        : null,
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: Text(
+                      'Next: ${viewModel.currentSession!.nextPhase.displayName}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _getPhaseColor(viewModel.currentSession!.nextPhase),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                )
+              else if (viewModel.canAdvancePhase)
                 Container(
                   margin: const EdgeInsets.only(right: 16),
                   child: ElevatedButton.icon(
@@ -216,6 +244,8 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return const VotingPhaseWidget();
       case RetroPhase.discuss:
         return const DiscussPhaseWidget();
+      case RetroPhase.finish:
+        return const FinishPhaseWidget();
     }
   }
 
@@ -229,6 +259,9 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return const Color(0xFF8B5CF6); // Purple
       case RetroPhase.discuss:
         return const Color(0xFF06B6D4); // Cyan
+      case RetroPhase.finish:
+        return const Color(0xFF6366F1); // Indigo (örnek)
+  // default kaldırıldı, tüm enumlar kapsandı
     }
   }
 
@@ -241,7 +274,10 @@ class _RetroBoardViewState extends State<RetroBoardView> {
       case RetroPhase.voting:
         return 'At least one group must have votes to advance';
       case RetroPhase.discuss:
-        return 'This is the final phase';
+        return 'Tartışma aşaması tamamlanınca bitişe geçebilirsiniz.';
+      case RetroPhase.finish:
+        return 'Retro sona erdi.';
+  // default kaldırıldı, tüm enumlar kapsandı
     }
   }
 
@@ -312,6 +348,9 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return Icons.how_to_vote_rounded;
       case RetroPhase.discuss:
         return Icons.forum_rounded;
+      case RetroPhase.finish:
+        return Icons.celebration_rounded;
+  // default kaldırıldı, tüm enumlar kapsandı
     }
   }
 

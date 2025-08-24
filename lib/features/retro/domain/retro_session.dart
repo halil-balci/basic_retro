@@ -108,7 +108,10 @@ class RetroSession {
       case RetroPhase.voting:
         return groups.any((g) => g.votes > 0);
       case RetroPhase.discuss:
-        return false; // Can't advance from discuss phase
+        // Son grup tartışılırken (index == length - 1) ve en az bir grup varsa finish'e geçilebilir
+        return sortedGroupsByVotes.isNotEmpty && currentDiscussionGroupIndex == sortedGroupsByVotes.length - 1;
+      case RetroPhase.finish:
+        return false;
     }
   }
 
@@ -121,7 +124,9 @@ class RetroSession {
       case RetroPhase.voting:
         return RetroPhase.discuss;
       case RetroPhase.discuss:
-        return RetroPhase.discuss; // Stay in discuss phase
+        return RetroPhase.finish;
+      case RetroPhase.finish:
+        return RetroPhase.finish;
     }
   }
 

@@ -2,7 +2,8 @@ enum RetroPhase {
   editing('Editing', 'Herkesin input girişi yaptığı aşama'),
   grouping('Grouping', 'Inputların gruplandığı aşama'),
   voting('Voting', 'Grupların oylandığı aşama'),
-  discuss('Discuss', 'Grupların tartışıldığı aşama');
+  discuss('Discuss', 'Grupların tartışıldığı aşama'),
+  finish('Finish', 'Retro sona erdi ve geri bildirim aşaması');
 
   const RetroPhase(this.displayName, this.description);
 

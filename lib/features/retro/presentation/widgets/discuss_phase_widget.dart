@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/thought_group.dart';
 import '../retro_view_model.dart';
+import 'finish_phase_widget.dart';
 
 class DiscussPhaseWidget extends StatelessWidget {
   const DiscussPhaseWidget({super.key});
@@ -13,6 +14,41 @@ class DiscussPhaseWidget extends StatelessWidget {
         final currentGroup = viewModel.currentDiscussionGroup;
         final sortedGroups = viewModel.sortedGroupsByVotes;
         final currentIndex = viewModel.currentSession?.currentDiscussionGroupIndex ?? 0;
+
+
+        // Eğer phase finish ise bitiş ekranı göster
+        if (viewModel.currentPhase.name == 'finish') {
+          return const FinishPhaseWidget();
+        }
+
+        // Son grupta ise "Bitir" butonu göster
+        final isLastGroup = currentIndex >= sortedGroups.length && sortedGroups.isNotEmpty;
+        if (isLastGroup) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Tüm gruplar tartışıldı.',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: viewModel.canAdvancePhase
+                      ? () async {
+                          await viewModel.advancePhase();
+                        }
+                      : null,
+                  icon: const Icon(Icons.flag),
+                  label: const Text('Bitir ve Geri Bildirim Aşamasına Geç'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
         return Column(
           children: [
