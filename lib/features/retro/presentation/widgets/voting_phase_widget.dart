@@ -240,7 +240,6 @@ class _VotableThoughtCard extends StatelessWidget {
         .where((group) => group.thoughts.any((t) => t.id == thought.id))
         .toList();
     
-    final totalVotes = groupsWithThisThought.fold(0, (sum, group) => sum + group.votes);
     final hasUserVoted = groupsWithThisThought.any((group) => group.hasUserVoted(viewModel.getCurrentUserId()));
     final userVoteCount = groupsWithThisThought.fold(0, (sum, group) => sum + group.getUserVoteCount(viewModel.getCurrentUserId()));
 
@@ -259,49 +258,21 @@ class _VotableThoughtCard extends StatelessWidget {
                 ? Border.all(color: Colors.green, width: 2)
                 : null,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      thought.content,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                  if (totalVotes > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.favorite, color: Colors.white, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            totalVotes.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+              Expanded(
+                child: Text(
+                  thought.content,
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
+              // Show user's own vote count and remove vote option
               if (hasUserVoted) ...[
-                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.green,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     'You voted ($userVoteCount)',
@@ -309,6 +280,22 @@ class _VotableThoughtCard extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _handleRemoveVote(context, thought, viewModel),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(
+                      Icons.remove_circle,
+                      size: 16,
+                      color: Colors.red.shade700,
                     ),
                   ),
                 ),
@@ -340,13 +327,65 @@ class _VotableThoughtCard extends StatelessWidget {
           .toList();
       
       if (groupsWithThought.isNotEmpty) {
+        // Vote for existing group
         await viewModel.voteForGroup(groupsWithThought.first.id);
+      } else {
+        // Create a single-thought group and vote for it
+        await viewModel.createGroup(
+          'Single Item: ${thought.content.length > 20 ? '${thought.content.substring(0, 20)}...' : thought.content}',
+          [thought],
+          0.0,
+          0.0,
+        );
+        
+        // Find the newly created group and vote for it
+        final newGroups = viewModel.currentGroups
+            .where((group) => group.thoughts.any((t) => t.id == thought.id))
+            .toList();
+        
+        if (newGroups.isNotEmpty) {
+          await viewModel.voteForGroup(newGroups.first.id);
+        }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error voting: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleRemoveVote(BuildContext context, RetroThought thought, RetroViewModel viewModel) async {
+    try {
+      // Find groups containing this thought that user has voted for
+      final groupsWithThought = viewModel.currentGroups
+          .where((group) => 
+              group.thoughts.any((t) => t.id == thought.id) && 
+              group.hasUserVoted(viewModel.getCurrentUserId()))
+          .toList();
+      
+      if (groupsWithThought.isNotEmpty) {
+        await viewModel.removeVoteFromGroup(groupsWithThought.first.id);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vote removed successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error removing vote: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -410,19 +449,36 @@ class _VotableGroupCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (group.votes > 0) ...[
+                  // Show user's own vote and remove option
+                  if (hasUserVoted) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade100,
+                        color: Colors.green,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${group.votes} vote${group.votes != 1 ? 's' : ''}',
-                        style: TextStyle(
+                        'You voted ($userVoteCount)',
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => _handleGroupRemoveVote(context, group, viewModel),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Icon(
+                          Icons.remove_circle,
+                          size: 16,
+                          color: Colors.red.shade700,
                         ),
                       ),
                     ),
@@ -478,25 +534,6 @@ class _VotableGroupCard extends StatelessWidget {
                   ],
                 );
               }).toList(),
-              // User vote indicator
-              if (hasUserVoted) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'You voted ($userVoteCount)',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -524,6 +561,31 @@ class _VotableGroupCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error voting: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleGroupRemoveVote(BuildContext context, ThoughtGroup group, RetroViewModel viewModel) async {
+    try {
+      await viewModel.removeVoteFromGroup(group.id);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vote removed successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error removing vote: $e'),
             backgroundColor: Colors.red,
           ),
         );

@@ -325,10 +325,8 @@ class RetroViewModel extends ChangeNotifier {
       // If advancing to voting phase, initialize user votes and ensure groups exist
       if (nextPhase == RetroPhase.voting) {
         await _initializeUserVotes();
-        // If no groups exist, create them from thoughts
-        if (currentGroups.isEmpty) {
-          await _createInitialGroups();
-        }
+        // Ensure all thoughts have groups (create individual groups for ungrouped thoughts)
+        await _ensureAllThoughtsHaveGroups();
       }
       
       // If advancing to discuss phase, ensure groups exist and reset discussion index
@@ -390,6 +388,44 @@ class RetroViewModel extends ChangeNotifier {
     }
     
     await _repository.updateSessionGroups(_currentSessionId!, groups);
+  }
+
+  // Ensure all thoughts have groups (for voting phase)
+  Future<void> _ensureAllThoughtsHaveGroups() async {
+    if (_currentSessionId == null) return;
+    
+    // Get all thoughts
+    final allThoughts = <RetroThought>[];
+    for (final categoryThoughts in _thoughtsByCategory.values) {
+      allThoughts.addAll(categoryThoughts);
+    }
+    
+    // Get thoughts that are already in groups
+    final thoughtsInGroups = <String>{};
+    for (final group in currentGroups) {
+      for (final thought in group.thoughts) {
+        thoughtsInGroups.add(thought.id);
+      }
+    }
+    
+    // Find thoughts that are not in any group
+    final ungroupedThoughts = allThoughts
+        .where((thought) => !thoughtsInGroups.contains(thought.id))
+        .toList();
+    
+    // Create individual groups for ungrouped thoughts
+    for (final thought in ungroupedThoughts) {
+      final group = ThoughtGroup(
+        id: 'single_${DateTime.now().millisecondsSinceEpoch}_${thought.id}',
+        name: 'Single Item: ${thought.content.length > 20 ? '${thought.content.substring(0, 20)}...' : thought.content}',
+        thoughts: [thought],
+        sessionId: _currentSessionId!,
+        x: 0.0,
+        y: 0.0,
+      );
+      
+      await _repository.addGroup(_currentSessionId!, group);
+    }
   }
 
   // Group Management
