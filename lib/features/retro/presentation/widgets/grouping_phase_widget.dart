@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../domain/thought_group.dart';
 import '../../domain/retro_thought.dart';
 import '../retro_view_model.dart';
 import '../../../../core/constants/retro_constants.dart';
@@ -13,103 +12,104 @@ class GroupingPhaseWidget extends StatefulWidget {
 }
 
 class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
-  List<GroupItem> _groupItems = [];
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeItems();
-    });
-  }
-
-  void _initializeItems([List<RetroThought>? thoughts]) {
-    if (_isInitialized) return;
-    
-    final viewModel = Provider.of<RetroViewModel>(context, listen: false);
-    final thoughtsToUse = thoughts ?? viewModel.thoughts;
-    
-    setState(() {
-      _groupItems = thoughtsToUse.asMap().entries.map((entry) {
-        final index = entry.key;
-        final thought = entry.value;
-        final col = index % 3;
-        final row = index ~/ 3;
-        
-        return GroupItem(
-          id: thought.id,
-          thoughts: [thought],
-          position: Offset(
-            col * 160.0 + 16,
-            row * 100.0 + 16,
-          ),
-        );
-      }).toList();
-      _isInitialized = true;
-    });
-  }
+  // Map to track groups - each group has an ID and list of thoughts
+  Map<String, List<RetroThought>> _thoughtGroups = {};
+  // Map to track which group each thought belongs to
+  Map<String, String> _thoughtToGroupMapping = {};
+  int _nextGroupId = 1;
 
   @override
   Widget build(BuildContext context) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        // Initialize items only once when we have thoughts and haven't initialized
-        if (!_isInitialized && viewModel.thoughts.isNotEmpty) {
-          // Use a microtask to avoid setState during build
-          Future.microtask(() {
-            if (mounted && !_isInitialized) {
-              _initializeItems(viewModel.thoughts);
-            }
-          });
-        }
-
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                color: Colors.orange.shade100,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              // Header card similar to editing phase
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.group_work,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.group_work, color: Colors.orange.shade800),
-                          const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'Grouping Phase',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                               fontSize: 18,
-                              color: Colors.orange.shade800,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Drag thoughts on top of each other to create groups. ${_thoughtGroups.length} groups created.',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Drag similar thoughts together to create groups. Click on a group to rename it.',
-                        style: TextStyle(color: Colors.orange.shade700),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Groups: ${_groupItems.length}',
-                style: Theme.of(context).textTheme.titleMedium,
+              const SizedBox(height: 24),
+              // Three column layout like editing phase
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: RetroConstants.categories.map((category) {
+                  Color categoryColor;
+                  switch (RetroConstants.categoryColors[category]) {
+                    case 'green':
+                      categoryColor = const Color(0xFF10B981);
+                      break;
+                    case 'red':
+                      categoryColor = const Color(0xFFEF4444);
+                      break;
+                    case 'blue':
+                      categoryColor = const Color(0xFF3B82F6);
+                      break;
+                    default:
+                      categoryColor = const Color(0xFF6B7280);
+                  }
+                  
+                  return Expanded(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        right: category != RetroConstants.categories.last ? 16 : 0,
+                      ),
+                      child: _buildGroupingCategoryColumn(category, categoryColor, viewModel),
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: _buildGroupingArea(),
-              ),
-              const SizedBox(height: 16),
-              _buildFinishButton(viewModel),
             ],
           ),
         );
@@ -117,338 +117,455 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
     );
   }
 
-  Widget _buildGroupingArea() {
+  Widget _buildGroupingCategoryColumn(String category, Color color, RetroViewModel viewModel) {
     return Container(
-      width: double.infinity,
+      height: 500, // Fixed height for better drag-drop experience
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey.shade50,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 2),
       ),
-      child: Stack(
-        children: _groupItems.map((item) => _buildDraggableGroupItem(item)).toList(),
-      ),
-    );
-  }
-
-  Widget _buildDraggableGroupItem(GroupItem item) {
-    return Positioned(
-      left: item.position.dx,
-      top: item.position.dy,
-      child: Draggable<GroupItem>(
-        data: item,
-        feedback: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(8),
-          child: _buildGroupCard(item, isDragging: true),
-        ),
-        childWhenDragging: Container(
-          width: 140,
-          height: _calculateHeight(item),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade400, style: BorderStyle.solid),
-          ),
-        ),
-        onDragEnd: (details) {
-          setState(() {
-            final index = _groupItems.indexOf(item);
-            if (index != -1) {
-              _groupItems[index] = item.copyWith(
-                position: Offset(
-                  details.offset.dx.clamp(0, double.infinity),
-                  details.offset.dy.clamp(0, double.infinity),
-                ),
-              );
-            }
-          });
-        },
-        child: DragTarget<GroupItem>(
-          onWillAccept: (draggedItem) => draggedItem != null && draggedItem != item,
-          onAccept: (draggedItem) {
-            _mergeGroups(item, draggedItem);
-          },
-          builder: (context, candidateData, rejectedData) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: candidateData.isNotEmpty
-                    ? Border.all(color: Colors.blue, width: 3)
-                    : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.05),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
               ),
-              child: _buildGroupCard(item, isHovered: candidateData.isNotEmpty),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupCard(GroupItem item, {bool isDragging = false, bool isHovered = false}) {
-    final color = isHovered ? Colors.blue.shade50 : Colors.white;
-    
-    return Container(
-      width: 140,
-      constraints: BoxConstraints(
-        minHeight: 80,
-        maxHeight: 160,
-      ),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isHovered ? Colors.blue : Colors.grey.shade300,
-          width: isHovered ? 2 : 1,
-        ),
-        boxShadow: isDragging ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ] : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+            ),
+            child: Column(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _showRenameDialog(item),
-                    child: Text(
-                      _getGroupName(item),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
+                Icon(
+                  _getCategoryIcon(category),
+                  color: color,
+                  size: 24,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(10),
+                const SizedBox(height: 8),
+                Text(
+                  RetroConstants.categoryTitles[category] ?? category,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: color,
                   ),
-                  child: Text(
-                    '${item.thoughts.length}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade800,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: item.thoughts.take(3).map((thought) => Container(
-                  margin: const EdgeInsets.only(bottom: 3),
-                  padding: const EdgeInsets.all(4),
+          ),
+          // Drop target area for grouping
+          Expanded(
+            child: DragTarget<RetroThought>(
+              onWillAccept: (data) {
+                return data != null;
+              },
+              onAccept: (thought) {
+                _moveThoughtToCategory(thought, category, viewModel);
+              },
+              builder: (context, candidateData, rejectedData) {
+                final isHighlighted = candidateData.isNotEmpty;
+                return Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(thought.category).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: _getCategoryColor(thought.category).withOpacity(0.3),
+                    color: isHighlighted 
+                        ? color.withOpacity(0.1) 
+                        : Colors.transparent,
+                    border: isHighlighted
+                        ? Border.all(color: color, width: 2)
+                        : null,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
                     ),
                   ),
-                  child: Text(
-                    thought.content,
-                    style: const TextStyle(fontSize: 10),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: _buildDraggableThoughtsList(category, viewModel),
+                    ),
                   ),
-                )).toList(),
-              ),
+                );
+              },
             ),
-            if (item.thoughts.length > 3)
-              Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Text(
-                  '+${item.thoughts.length - 3} more...',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFinishButton(RetroViewModel viewModel) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _groupItems.isNotEmpty ? () => _finishGrouping(viewModel) : null,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: Text('Finish Grouping (${_groupItems.length} groups)'),
-      ),
-    );
-  }
-
-  double _calculateHeight(GroupItem item) {
-    return 80 + (item.thoughts.length.clamp(0, 3) * 20).toDouble();
-  }
-
-  String _getGroupName(GroupItem item) {
-    if (item.customName?.isNotEmpty == true) {
-      return item.customName!;
-    }
-    if (item.thoughts.length == 1) {
-      return 'Single Item';
-    }
-    return 'Group (${item.thoughts.length} items)';
-  }
-
-  void _mergeGroups(GroupItem target, GroupItem source) {
-    setState(() {
-      final targetIndex = _groupItems.indexOf(target);
-      if (targetIndex != -1) {
-        // Merge thoughts
-        final mergedThoughts = [...target.thoughts, ...source.thoughts];
-        _groupItems[targetIndex] = target.copyWith(thoughts: mergedThoughts);
-        
-        // Remove source group
-        _groupItems.remove(source);
-      }
-    });
-  }
-
-  void _showRenameDialog(GroupItem item) {
-    final controller = TextEditingController(text: item.customName ?? '');
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Group'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Group Name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                final index = _groupItems.indexOf(item);
-                if (index != -1) {
-                  _groupItems[index] = item.copyWith(customName: controller.text.trim());
-                }
-              });
-              Navigator.of(context).pop();
-            },
-            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _finishGrouping(RetroViewModel viewModel) async {
-    try {
-      // Clear existing groups
-      await viewModel.clearGroups();
-      
-      // Create groups from current items
-      for (int i = 0; i < _groupItems.length; i++) {
-        final item = _groupItems[i];
-        final group = ThoughtGroup(
-          id: '', // Firebase will generate
-          name: _getGroupName(item),
-          thoughts: item.thoughts,
-          sessionId: viewModel.currentSessionId ?? '',
-          x: item.position.dx,
-          y: item.position.dy,
-        );
-        
-        await viewModel.createGroup(group.name, item.thoughts, item.position.dx, item.position.dy);
-      }
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Created ${_groupItems.length} groups successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating groups: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Start':
+        return Icons.lightbulb_rounded;
+      case 'Stop':
+        return Icons.thumb_down_rounded;
+      case 'Continue':
+        return Icons.thumb_up_rounded;
+      default:
+        return Icons.note_rounded;
     }
   }
 
-  Color _getCategoryColor(String category) {
-    switch (RetroConstants.categoryColors[category]) {
-      case 'green':
-        return Colors.green;
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      default:
-        return Colors.grey;
+  List<Widget> _buildDraggableThoughtsList(String category, RetroViewModel viewModel) {
+    final thoughts = viewModel.thoughtsByCategory[category] ?? <RetroThought>[];
+    
+    if (thoughts.isEmpty) {
+      return [
+        Container(
+          height: 100,
+          alignment: Alignment.center,
+          child: Text(
+            'Drop thoughts here',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ];
     }
+    
+    final widgets = <Widget>[];
+    final processedThoughts = <String>{}; // Track which thoughts we've already processed
+    final processedGroups = <String>{}; // Track which groups we've already processed
+    
+    for (final thought in thoughts) {
+      if (processedThoughts.contains(thought.id)) {
+        continue; // Skip if we've already processed this thought as part of a group
+      }
+      
+      final groupId = _thoughtToGroupMapping[thought.id];
+      
+      if (groupId != null && _thoughtGroups[groupId] != null && _thoughtGroups[groupId]!.length > 1) {
+        // Check if this group should be displayed in this category
+        final groupThoughts = _thoughtGroups[groupId]!;
+        final primaryCategory = groupThoughts.first.category; // Use first thought's category as primary
+        
+        if (primaryCategory == category && !processedGroups.contains(groupId)) {
+          // This group belongs to this category and hasn't been processed yet
+          widgets.add(Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: _GroupCard(
+              groupId: groupId,
+              thoughts: groupThoughts,
+              onSplit: () => _splitGroup(groupId),
+              viewModel: viewModel,
+              onAddToGroup: (thought) => _addThoughtToGroup(thought, groupId),
+            ),
+          ));
+          
+          processedGroups.add(groupId);
+          
+          // Mark all thoughts in this group as processed
+          for (final groupThought in groupThoughts) {
+            processedThoughts.add(groupThought.id);
+          }
+        } else {
+          // This thought belongs to a group in another category or already processed, mark as processed
+          processedThoughts.add(thought.id);
+        }
+      } else if (!processedThoughts.contains(thought.id)) {
+        // This is a single thought that belongs to this category
+        widgets.add(Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: _DraggableThoughtCard(
+            thought: thought,
+            viewModel: viewModel,
+            onGroupWith: (targetThought) => _createGroup([thought, targetThought]),
+          ),
+        ));
+        processedThoughts.add(thought.id);
+      }
+    }
+    
+    return widgets;
+  }
+
+  void _createGroup(List<RetroThought> thoughts) {
+    setState(() {
+      final groupId = 'group_${_nextGroupId++}';
+      _thoughtGroups[groupId] = thoughts;
+      
+      // Update mapping for all thoughts in the group
+      for (final thought in thoughts) {
+        _thoughtToGroupMapping[thought.id] = groupId;
+      }
+    });
+    
+    // Save groups to ViewModel whenever groups are created/modified
+    _saveGroupsToViewModel();
+  }
+
+  Future<void> _saveGroupsToViewModel() async {
+    final viewModel = Provider.of<RetroViewModel>(context, listen: false);
+    
+    try {
+      // Clear existing groups first
+      await viewModel.clearGroups();
+      
+      // Convert local groups to ThoughtGroup objects and save them
+      for (final entry in _thoughtGroups.entries) {
+        final thoughts = entry.value;
+        
+        if (thoughts.isNotEmpty) {
+          // Group name based on primary category and contents
+          final primaryCategory = thoughts.first.category;
+          final categoryCounts = <String, int>{};
+          for (final thought in thoughts) {
+            categoryCounts[thought.category] = (categoryCounts[thought.category] ?? 0) + 1;
+          }
+          
+          String groupName;
+          if (categoryCounts.length == 1) {
+            // Single category group
+            groupName = 'Group from $primaryCategory (${thoughts.length} items)';
+          } else {
+            // Multi-category group
+            final categoryList = categoryCounts.entries
+                .map((e) => '${e.value} ${e.key}')
+                .join(', ');
+            groupName = 'Mixed Group ($categoryList)';
+          }
+          
+          await viewModel.createGroup(
+            groupName,
+            thoughts,
+            0.0,
+            0.0,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving groups to ViewModel: $e');
+    }
+  }
+
+  void _splitGroup(String groupId) {
+    setState(() {
+      final thoughts = _thoughtGroups[groupId];
+      if (thoughts != null) {
+        // Remove group mapping for all thoughts
+        for (final thought in thoughts) {
+          _thoughtToGroupMapping.remove(thought.id);
+        }
+        // Remove the group
+        _thoughtGroups.remove(groupId);
+      }
+    });
+    
+    // Save groups to ViewModel after splitting
+    _saveGroupsToViewModel();
+  }
+
+  void _addThoughtToGroup(RetroThought thought, String groupId) {
+    setState(() {
+      // Remove from any existing group
+      final oldGroupId = _thoughtToGroupMapping[thought.id];
+      if (oldGroupId != null && oldGroupId != groupId) {
+        _thoughtGroups[oldGroupId]?.remove(thought);
+        if (_thoughtGroups[oldGroupId]?.isEmpty ?? false) {
+          _thoughtGroups.remove(oldGroupId);
+        }
+      }
+      
+      // Add to new group
+      _thoughtToGroupMapping[thought.id] = groupId;
+      _thoughtGroups[groupId]?.add(thought);
+    });
+    
+    // Save groups to ViewModel after adding thought to group
+    _saveGroupsToViewModel();
+  }
+
+  void _moveThoughtToCategory(RetroThought thought, String newCategory, RetroViewModel viewModel) {
+    // This would update the thought's category in the real implementation
+    debugPrint('Moved "${thought.content}" to $newCategory');
   }
 }
 
-class GroupItem {
-  final String id;
-  final List<RetroThought> thoughts;
-  final Offset position;
-  final String? customName;
+class _DraggableThoughtCard extends StatelessWidget {
+  final RetroThought thought;
+  final RetroViewModel viewModel;
+  final Function(RetroThought) onGroupWith;
 
-  GroupItem({
-    required this.id,
-    required this.thoughts,
-    required this.position,
-    this.customName,
+  const _DraggableThoughtCard({
+    required this.thought,
+    required this.viewModel,
+    required this.onGroupWith,
   });
 
-  GroupItem copyWith({
-    List<RetroThought>? thoughts,
-    Offset? position,
-    String? customName,
-  }) {
-    return GroupItem(
-      id: id,
-      thoughts: thoughts ?? this.thoughts,
-      position: position ?? this.position,
-      customName: customName ?? this.customName,
+  @override
+  Widget build(BuildContext context) {
+    return DragTarget<RetroThought>(
+      onWillAccept: (data) {
+        return data != null && data.id != thought.id;
+      },
+      onAccept: (droppedThought) {
+        onGroupWith(droppedThought);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHighlighted = candidateData.isNotEmpty;
+        return Draggable<RetroThought>(
+          data: thought,
+          feedback: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 200,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                thought.content,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.5,
+            child: _buildThoughtCard(isHighlighted),
+          ),
+          child: _buildThoughtCard(isHighlighted),
+        );
+      },
+    );
+  }
+
+  Widget _buildThoughtCard(bool isHighlighted) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 2,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: isHighlighted ? Colors.blue.shade50 : Colors.white,
+          border: Border.all(
+            color: isHighlighted ? Colors.blue : const Color(0xFFE2E8F0),
+            width: isHighlighted ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          thought.content,
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupCard extends StatelessWidget {
+  final String groupId;
+  final List<RetroThought> thoughts;
+  final VoidCallback onSplit;
+  final RetroViewModel viewModel;
+  final Function(RetroThought)? onAddToGroup;
+
+  const _GroupCard({
+    required this.groupId,
+    required this.thoughts,
+    required this.onSplit,
+    required this.viewModel,
+    this.onAddToGroup,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DragTarget<RetroThought>(
+      onWillAccept: (data) {
+        return data != null && 
+               thoughts.isNotEmpty && 
+               !thoughts.any((t) => t.id == data.id);
+      },
+      onAccept: (droppedThought) {
+        onAddToGroup?.call(droppedThought);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHighlighted = candidateData.isNotEmpty;
+        return Card(
+          margin: EdgeInsets.zero,
+          elevation: 4,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: isHighlighted ? Colors.amber.shade100 : Colors.amber.shade50,
+              border: Border.all(
+                color: isHighlighted ? Colors.amber.shade800 : Colors.amber,
+                width: isHighlighted ? 3 : 2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.group_work, color: Colors.amber.shade700, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Group (${thoughts.length} items)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: onSplit,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Icon(
+                          Icons.call_split,
+                          size: 16,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ...thoughts.take(2).map((thought) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    thought.content,
+                    style: const TextStyle(fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )),
+                if (thoughts.length > 2)
+                  Text(
+                    '+${thoughts.length - 2} more...',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
