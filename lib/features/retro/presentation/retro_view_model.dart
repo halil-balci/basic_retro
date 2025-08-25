@@ -173,7 +173,6 @@ class RetroViewModel extends ChangeNotifier {
       throw Exception('Thought content cannot be empty');
     }
 
-    _setLoading(true);
     try {
       debugPrint('Adding thought to session: $_currentSessionId');
       final thought = RetroThought(
@@ -187,11 +186,11 @@ class RetroViewModel extends ChangeNotifier {
 
       await _repository.addThought(_currentSessionId!, thought);
       debugPrint('Thought added successfully');
+      
+      // Don't call _setLoading here - let the real-time listener handle the UI update
     } catch (e) {
       debugPrint('Error adding thought: $e');
       rethrow;
-    } finally {
-      _setLoading(false);
     }
   }
 

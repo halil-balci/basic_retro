@@ -13,6 +13,7 @@ class EditingPhaseWidget extends StatefulWidget {
 
 class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
   late final Map<String, TextEditingController> _controllers;
+  final Map<String, bool> _isAdding = {};
 
   @override
   void initState() {
@@ -21,6 +22,10 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
       RetroConstants.categories.map((category) => 
         MapEntry(category, TextEditingController())),
     );
+    // Initialize loading states
+    for (final category in RetroConstants.categories) {
+      _isAdding[category] = false;
+    }
   }
 
   @override
@@ -173,19 +178,35 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _controllers[category],
+              enabled: !(_isAdding[category] ?? false),
               decoration: InputDecoration(
                 hintText: RetroConstants.categoryDescriptions[category] ?? 'Add a $category item...',
                 hintStyle: TextStyle(color: Colors.grey.shade500),
                 suffixIcon: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: color,
+                    color: (_isAdding[category] ?? false) ? Colors.grey : color,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: IconButton(
-                    icon: const Icon(Icons.add_rounded, color: Colors.white),
-                    onPressed: () => _addThought(category, viewModel),
-                  ),
+                  child: (_isAdding[category] ?? false)
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.add_rounded, color: Colors.white),
+                          onPressed: () => _addThought(category, viewModel),
+                        ),
                 ),
               ),
               onSubmitted: (_) => _addThought(category, viewModel),
@@ -234,14 +255,39 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
     final content = _controllers[category]?.text.trim() ?? '';
     if (content.isEmpty) return;
 
+    // Prevent multiple submissions
+    if (_isAdding[category] == true) return;
+
+    // Set loading state
+    setState(() {
+      _isAdding[category] = true;
+    });
+
+    // Clear the input field immediately for better UX
+    _controllers[category]?.clear();
+    
     try {
       await viewModel.addThought(content, category);
-      _controllers[category]?.clear();
+      // The Firebase listener will automatically update the UI,
+      // so no need to manually trigger a rebuild here
     } catch (e) {
       if (mounted) {
+        // Show error and restore the content since it failed
+        _controllers[category]?.text = content;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding thought: $e')),
+          SnackBar(
+            content: Text('Error adding thought: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
         );
+      }
+    } finally {
+      // Clear loading state
+      if (mounted) {
+        setState(() {
+          _isAdding[category] = false;
+        });
       }
     }
   }
