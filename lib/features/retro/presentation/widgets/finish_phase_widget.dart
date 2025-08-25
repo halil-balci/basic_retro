@@ -40,7 +40,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Görüşünüz gönderilemedi: $e')),
+        SnackBar(content: Text('Your feedback could not be sent: $e')),
       );
     }
   }
@@ -58,20 +58,20 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
             Icon(Icons.celebration, color: Colors.green, size: 80),
             const SizedBox(height: 24),
             Text(
-              'Tebrikler! Tüm aşamaları başarıyla tamamladınız.',
+              'Congratulations! You have successfully completed all phases.',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
-              'Katılımınız için teşekkür ederiz.\nBir sonraki retrospektifte görüşmek üzere!',
+              'Thank you for your participation.\nSee you at the next retrospective!',
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             if (!_submitted) ...[
               Text(
-                'Proje ile ilgili görüş, dilek ve isteklerinizi bizimle paylaşabilirsiniz:',
+                'You can share your thoughts, wishes, and requests regarding the project with us:',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -82,20 +82,20 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                 maxLines: 5,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: 'Görüş, dilek veya isteklerinizi yazınız...',
+                  hintText: 'Write your thoughts, wishes, or requests...',
                 ),
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: _feedbackController.text.trim().isEmpty ? null : _submitFeedback,
                 icon: const Icon(Icons.send),
-                label: const Text('Gönder'),
+                label: const Text('Send'),
               ),
             ] else ...[
               const Icon(Icons.check_circle, color: Colors.blue, size: 40),
               const SizedBox(height: 12),
               const Text(
-                'Görüşünüz için teşekkürler!',
+                'Thank you for your feedback!',
                 style: TextStyle(fontSize: 16, color: Colors.blue),
                 textAlign: TextAlign.center,
               ),
