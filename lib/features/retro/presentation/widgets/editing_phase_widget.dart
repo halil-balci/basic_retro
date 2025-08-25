@@ -40,100 +40,171 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
   Widget build(BuildContext context) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF10B981), Color(0xFF059669)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmallScreen = constraints.maxWidth < 600;
+            
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: isSmallScreen
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Editing Phase',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Share your thoughts anonymously. Others\' thoughts are hidden until the next phase.',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.edit_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Editing Phase',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Share your thoughts anonymously. Others\' thoughts are hidden until the next phase.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.edit_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
+                  SizedBox(height: isSmallScreen ? 16 : 24),
+                  // Categories - Responsive layout
+                  isSmallScreen 
+                    ? Column(
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          return Container(
+                            margin: EdgeInsets.only(
+                              bottom: category != RetroConstants.categories.last ? 16 : 0,
+                            ),
+                            child: _buildCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
+                          );
+                        }).toList(),
+                      )
+                    : Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Editing Phase',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          return Expanded(
+                            child: Container(
+                              margin: EdgeInsets.only(
+                                right: category != RetroConstants.categories.last ? 16 : 0,
+                              ),
+                              child: _buildCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Share your thoughts anonymously. Others\' thoughts are hidden until the next phase.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: RetroConstants.categories.map((category) {
-                  Color categoryColor;
-                  switch (RetroConstants.categoryColors[category]) {
-                    case 'green':
-                      categoryColor = const Color(0xFF10B981);
-                      break;
-                    case 'red':
-                      categoryColor = const Color(0xFFEF4444);
-                      break;
-                    case 'blue':
-                      categoryColor = const Color(0xFF3B82F6);
-                      break;
-                    default:
-                      categoryColor = const Color(0xFF6B7280);
-                  }
-                  
-                  return Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        right: category != RetroConstants.categories.last ? 16 : 0,
-                      ),
-                      child: _buildCategoryColumn(category, categoryColor, viewModel),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildCategoryColumn(String category, Color color, RetroViewModel viewModel) {
+  Widget _buildCategoryColumn(String category, Color color, RetroViewModel viewModel, bool isSmallScreen) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -145,7 +216,7 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
               color: color.withOpacity(0.05),
               borderRadius: const BorderRadius.only(
@@ -158,13 +229,13 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                 Icon(
                   _getCategoryIcon(category),
                   color: color,
-                  size: 24,
+                  size: isSmallScreen ? 20 : 24,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isSmallScreen ? 6 : 8),
                 Text(
                   RetroConstants.categoryTitles[category] ?? category,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -175,13 +246,22 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
           ),
           // Input area
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             child: TextField(
               controller: _controllers[category],
               enabled: !(_isAdding[category] ?? false),
+              maxLines: isSmallScreen ? 2 : null,
+              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
               decoration: InputDecoration(
                 hintText: RetroConstants.categoryDescriptions[category] ?? 'Add a $category item...',
-                hintStyle: TextStyle(color: Colors.grey.shade500),
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: isSmallScreen ? 13 : 14,
+                ),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 12 : 16,
+                  vertical: isSmallScreen ? 8 : 12,
+                ),
                 suffixIcon: Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -189,13 +269,13 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: (_isAdding[category] ?? false)
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
+                      ? SizedBox(
+                          width: isSmallScreen ? 20 : 24,
+                          height: isSmallScreen ? 20 : 24,
                           child: Center(
                             child: SizedBox(
-                              width: 16,
-                              height: 16,
+                              width: isSmallScreen ? 14 : 16,
+                              height: isSmallScreen ? 14 : 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -204,20 +284,27 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                           ),
                         )
                       : IconButton(
-                          icon: const Icon(Icons.add_rounded, color: Colors.white),
+                          icon: Icon(
+                            Icons.add_rounded, 
+                            color: Colors.white,
+                            size: isSmallScreen ? 18 : 20,
+                          ),
                           onPressed: () => _addThought(category, viewModel),
                         ),
                 ),
               ),
               onSubmitted: (_) => _addThought(category, viewModel),
-              maxLines: null,
             ),
           ),
           // Thoughts list
           Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+            padding: EdgeInsets.only(
+              left: isSmallScreen ? 12 : 16, 
+              right: isSmallScreen ? 12 : 16, 
+              bottom: isSmallScreen ? 12 : 16
+            ),
             child: Column(
-              children: _buildThoughtsList(category, viewModel),
+              children: _buildThoughtsList(category, viewModel, isSmallScreen),
             ),
           ),
         ],
@@ -238,14 +325,15 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
     }
   }
 
-  List<Widget> _buildThoughtsList(String category, RetroViewModel viewModel) {
+  List<Widget> _buildThoughtsList(String category, RetroViewModel viewModel, bool isSmallScreen) {
     final thoughts = viewModel.thoughtsByCategory[category] ?? <RetroThought>[];
     return thoughts
         .map((thought) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
+              margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
               child: _BlurredThoughtCard(
                 thought: thought,
                 shouldBlur: viewModel.shouldBlurThought(thought),
+                isSmallScreen: isSmallScreen,
               ),
             ))
         .toList();
@@ -296,16 +384,18 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
 class _BlurredThoughtCard extends StatelessWidget {
   final RetroThought thought;
   final bool shouldBlur;
+  final bool isSmallScreen;
 
   const _BlurredThoughtCard({
     required this.thought,
     required this.shouldBlur,
+    this.isSmallScreen = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -318,8 +408,8 @@ class _BlurredThoughtCard extends StatelessWidget {
                 children: [
                   Text(
                     thought.content,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 13 : 14,
                       color: Colors.transparent,
                     ),
                   ),
@@ -329,11 +419,11 @@ class _BlurredThoughtCard extends StatelessWidget {
                         color: const Color(0xFF6B7280).withOpacity(0.3),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.visibility_off_rounded,
                           color: Color(0xFF6B7280),
-                          size: 16,
+                          size: isSmallScreen ? 14 : 16,
                         ),
                       ),
                     ),
@@ -342,8 +432,8 @@ class _BlurredThoughtCard extends StatelessWidget {
               )
             : Text(
                 thought.content,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 13 : 14,
                   color: Color(0xFF374151),
                   height: 1.4,
                 ),

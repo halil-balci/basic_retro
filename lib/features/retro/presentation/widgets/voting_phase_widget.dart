@@ -12,102 +12,149 @@ class VotingPhaseWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Header card similar to editing phase
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmallScreen = constraints.maxWidth < 600;
+            
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
+              child: Column(
+                children: [
+                  // Header card similar to editing phase
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.how_to_vote,
+                                color: Colors.white,
+                                size: isSmallScreen ? 20 : 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Voting Phase',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 2 : 4),
+                                  Text(
+                                    'You have ${viewModel.getUserRemainingVotes()} votes remaining.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 13 : 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Click on thoughts to vote.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.how_to_vote,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
+                  const SizedBox(height: 24),
+                  // Responsive layout - vertical on small screens, horizontal on large screens
+                  isSmallScreen
+                    ? Column(
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          
+                          return Container(
+                            width: double.infinity,
+                            margin: EdgeInsets.only(
+                              bottom: category != RetroConstants.categories.last ? 16 : 0,
+                            ),
+                            child: _buildVotingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
+                          );
+                        }).toList(),
+                      )
+                    : Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Voting Phase',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          
+                          return Expanded(
+                            child: Container(
+                              margin: EdgeInsets.only(
+                                right: category != RetroConstants.categories.last ? 16 : 0,
+                              ),
+                              child: _buildVotingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'You have ${viewModel.getUserRemainingVotes()} votes remaining. Click on thoughts to vote.',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
-              // Three column layout like editing phase
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: RetroConstants.categories.map((category) {
-                  Color categoryColor;
-                  switch (RetroConstants.categoryColors[category]) {
-                    case 'green':
-                      categoryColor = const Color(0xFF10B981);
-                      break;
-                    case 'red':
-                      categoryColor = const Color(0xFFEF4444);
-                      break;
-                    case 'blue':
-                      categoryColor = const Color(0xFF3B82F6);
-                      break;
-                    default:
-                      categoryColor = const Color(0xFF6B7280);
-                  }
-                  
-                  return Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        right: category != RetroConstants.categories.last ? 16 : 0,
-                      ),
-                      child: _buildVotingCategoryColumn(category, categoryColor, viewModel),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildVotingCategoryColumn(String category, Color color, RetroViewModel viewModel) {
+  Widget _buildVotingCategoryColumn(String category, Color color, RetroViewModel viewModel, bool isSmallScreen) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -119,7 +166,7 @@ class VotingPhaseWidget extends StatelessWidget {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
               color: color.withOpacity(0.05),
               borderRadius: const BorderRadius.only(
@@ -132,13 +179,13 @@ class VotingPhaseWidget extends StatelessWidget {
                 Icon(
                   _getCategoryIcon(category),
                   color: color,
-                  size: 24,
+                  size: isSmallScreen ? 20 : 24,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isSmallScreen ? 6 : 8),
                 Text(
                   RetroConstants.categoryTitles[category] ?? category,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -149,7 +196,7 @@ class VotingPhaseWidget extends StatelessWidget {
           ),
           // Thoughts list for voting
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             child: Column(
               children: _buildVotableThoughtsList(category, viewModel),
             ),

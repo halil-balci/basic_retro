@@ -22,104 +22,155 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
   Widget build(BuildContext context) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Header card similar to editing phase
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmallScreen = constraints.maxWidth < 600;
+            
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
+              child: Column(
+                children: [
+                  // Header card similar to editing phase
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.group_work,
+                                color: Colors.white,
+                                size: isSmallScreen ? 20 : 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Grouping Phase',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 16 : 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 2 : 4),
+                                  Text(
+                                    '${_thoughtGroups.length} groups created.',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isSmallScreen ? 13 : 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Drag thoughts on top of each other to create groups.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.group_work,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
+                  const SizedBox(height: 24),
+                  // Responsive layout - vertical on small screens, horizontal on large screens
+                  isSmallScreen
+                    ? Column(
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          
+                          return Container(
+                            width: double.infinity,
+                            margin: EdgeInsets.only(
+                              bottom: category != RetroConstants.categories.last ? 16 : 0,
+                            ),
+                            child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
+                          );
+                        }).toList(),
+                      )
+                    : Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Grouping Phase',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                        children: RetroConstants.categories.map((category) {
+                          Color categoryColor;
+                          switch (RetroConstants.categoryColors[category]) {
+                            case 'green':
+                              categoryColor = const Color(0xFF10B981);
+                              break;
+                            case 'red':
+                              categoryColor = const Color(0xFFEF4444);
+                              break;
+                            case 'blue':
+                              categoryColor = const Color(0xFF3B82F6);
+                              break;
+                            default:
+                              categoryColor = const Color(0xFF6B7280);
+                          }
+                          
+                          return Expanded(
+                            child: Container(
+                              margin: EdgeInsets.only(
+                                right: category != RetroConstants.categories.last ? 16 : 0,
+                              ),
+                              child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Drag thoughts on top of each other to create groups. ${_thoughtGroups.length} groups created.',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
-              // Three column layout like editing phase
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: RetroConstants.categories.map((category) {
-                  Color categoryColor;
-                  switch (RetroConstants.categoryColors[category]) {
-                    case 'green':
-                      categoryColor = const Color(0xFF10B981);
-                      break;
-                    case 'red':
-                      categoryColor = const Color(0xFFEF4444);
-                      break;
-                    case 'blue':
-                      categoryColor = const Color(0xFF3B82F6);
-                      break;
-                    default:
-                      categoryColor = const Color(0xFF6B7280);
-                  }
-                  
-                  return Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(
-                        right: category != RetroConstants.categories.last ? 16 : 0,
-                      ),
-                      child: _buildGroupingCategoryColumn(category, categoryColor, viewModel),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildGroupingCategoryColumn(String category, Color color, RetroViewModel viewModel) {
+  Widget _buildGroupingCategoryColumn(String category, Color color, RetroViewModel viewModel, bool isSmallScreen) {
     return Container(
-      height: 500, // Fixed height for better drag-drop experience
+      constraints: isSmallScreen 
+        ? null 
+        : const BoxConstraints(
+            minHeight: 200, // Minimum height for drag-drop on large screens
+          ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -127,10 +178,11 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
               color: color.withOpacity(0.05),
               borderRadius: const BorderRadius.only(
@@ -143,13 +195,13 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
                 Icon(
                   _getCategoryIcon(category),
                   color: color,
-                  size: 24,
+                  size: isSmallScreen ? 20 : 24,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isSmallScreen ? 6 : 8),
                 Text(
                   RetroConstants.categoryTitles[category] ?? category,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.w600,
                     color: color,
                   ),
@@ -159,38 +211,54 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
             ),
           ),
           // Drop target area for grouping
-          Expanded(
-            child: DragTarget<RetroThought>(
-              onWillAccept: (data) {
-                return data != null;
-              },
-              onAccept: (thought) {
-                _moveThoughtToCategory(thought, category, viewModel);
-              },
-              builder: (context, candidateData, rejectedData) {
-                final isHighlighted = candidateData.isNotEmpty;
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isHighlighted 
-                        ? color.withOpacity(0.1) 
-                        : Colors.transparent,
-                    border: isHighlighted
-                        ? Border.all(color: color, width: 2)
-                        : null,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
-                    ),
+          DragTarget<RetroThought>(
+            onWillAccept: (data) {
+              return data != null;
+            },
+            onAccept: (thought) {
+              _moveThoughtToCategory(thought, category, viewModel);
+            },
+            builder: (context, candidateData, rejectedData) {
+              final isHighlighted = candidateData.isNotEmpty;
+              final thoughtsList = _buildDraggableThoughtsList(category, viewModel);
+              
+              return Container(
+                constraints: BoxConstraints(
+                  minHeight: thoughtsList.isEmpty ? (isSmallScreen ? 80 : 120) : 0, // Responsive minimal height
+                ),
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                decoration: BoxDecoration(
+                  color: isHighlighted 
+                      ? color.withOpacity(0.1) 
+                      : Colors.transparent,
+                  border: isHighlighted
+                      ? Border.all(color: color, width: 2)
+                      : null,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: _buildDraggableThoughtsList(category, viewModel),
+                ),
+                child: thoughtsList.isEmpty
+                  ? Center(
+                      child: Text(
+                        isHighlighted 
+                          ? 'Drop here to group' 
+                          : 'Drag thoughts here to group them',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: isSmallScreen ? 12 : 14,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: thoughtsList,
                     ),
-                  ),
-                );
-              },
-            ),
+              );
+            },
           ),
         ],
       ),
