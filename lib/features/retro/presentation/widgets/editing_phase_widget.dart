@@ -285,7 +285,7 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                         )
                       : IconButton(
                           icon: Icon(
-                            Icons.add_rounded, 
+                            Icons.send, 
                             color: Colors.white,
                             size: isSmallScreen ? 18 : 20,
                           ),

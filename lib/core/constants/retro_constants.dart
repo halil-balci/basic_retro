@@ -1,30 +1,30 @@
 class RetroConstants {
   // Retro kategorileri - tek yerden yönetim
   static const List<String> categories = [
-    'Start',
-    'Stop', 
-    'Continue',
+    'Sad',
+    'Mad', 
+    'Glad',
   ];
   
   // Kategori başlıkları
-  static const Map<String, String> categoryTitles = {
-    'Start': 'Start Doing',
-    'Stop': 'Stop Doing',
-    'Continue': 'Continue Doing',
+  static Map<String, String> categoryTitles = {
+    categories[0]: 'Sad',
+    categories[1]: 'Mad',
+    categories[2]: 'Glad',
   };
   
   // Kategori açıklamaları
-  static const Map<String, String> categoryDescriptions = {
-    'Start': 'What should we start doing?',
-    'Stop': 'What should we stop doing?',
-    'Continue': 'What should we continue doing?',
+  static Map<String, String> categoryDescriptions = {
+    categories[0]: 'What is driving you crazy? ',
+    categories[1]: 'What is disappointing you? ',
+    categories[2]: 'What is making you happy? ',
   };
   
   // Kategori renkleri
-  static const Map<String, String> categoryColors = {
-    'Start': 'green',
-    'Stop': 'red',
-    'Continue': 'blue',
+  static Map<String, String> categoryColors = {
+    categories[0]: 'green',
+    categories[1]: 'red',
+    categories[2]: 'blue',
   };
   
   // Boş kategori map'i oluşturma helper'ı
