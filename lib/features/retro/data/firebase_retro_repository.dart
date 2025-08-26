@@ -14,16 +14,18 @@ class FirebaseRetroRepository implements IRetroRepository {
   FirebaseRetroRepository(this._firestore);
 
   @override
-  Future<RetroSession> createSession(String name, String creatorId) async {
+  Future<RetroSession> createSession(String name, String creatorId, String creatorName) async {
     try {
       final sessionRef = _firestore.collection(_sessionsCollection).doc();
       final now = DateTime.now();
+      
       final session = RetroSession(
         id: sessionRef.id,
         name: name,
         creatorId: creatorId,
         createdAt: now,
         participants: [creatorId],
+        activeUsers: {creatorId: creatorName}, // Add creator to activeUsers immediately
       );
 
       // Create the session document
@@ -98,6 +100,7 @@ class FirebaseRetroRepository implements IRetroRepository {
   }
 
   // Add stream method for session changes
+  @override
   Stream<RetroSession?> getSessionStream(String sessionId) {
     return _firestore
         .collection(_sessionsCollection)
@@ -200,17 +203,7 @@ class FirebaseRetroRepository implements IRetroRepository {
           .collection(_thoughtsCollection)
           .doc();
       
-      // Add the document ID to the thought data
-      final thoughtData = thought.toJson();
-      thoughtData['id'] = thoughtRef.id;
-      
-      // Save the thought
-      await thoughtRef
-          .collection(_sessionsCollection)
-          .doc(sessionId)
-          .collection(_thoughtsCollection)
-          .doc();
-
+      // Save the thought with the generated ID
       await thoughtRef.set({
         ...thought.toJson(),
         'id': thoughtRef.id,

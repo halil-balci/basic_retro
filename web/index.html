@@ -32,6 +32,64 @@
 
   <title>Retro Board</title>
   <link rel="manifest" href="manifest.json">
+  
+  <script>
+    // Flutter Web Integration for Session Management
+    window.retroBoardState = {
+      currentSessionId: null,
+      currentUserId: null,
+      isInSession: false
+    };
+    
+    // Function to register session info from Flutter
+    window.registerSession = function(sessionId, userId) {
+      window.retroBoardState.currentSessionId = sessionId;
+      window.retroBoardState.currentUserId = userId;
+      window.retroBoardState.isInSession = true;
+      console.log('Session registered:', sessionId, userId);
+    };
+    
+    // Function to unregister session
+    window.unregisterSession = function() {
+      window.retroBoardState.currentSessionId = null;
+      window.retroBoardState.currentUserId = null;
+      window.retroBoardState.isInSession = false;
+      console.log('Session unregistered');
+    };
+    
+    // Handle page unload - ONLY when page is actually being closed/reloaded
+    window.addEventListener('beforeunload', function(event) {
+      if (window.retroBoardState.isInSession) {
+        console.log('Page is being closed/reloaded - leaving session');
+        // Use navigator.sendBeacon for reliable cleanup on page unload
+        if (window.flutterLeaveSession) {
+          window.flutterLeaveSession();
+        }
+      }
+    });
+    
+    // Handle page unload as a backup (when beforeunload doesn't fire)
+    window.addEventListener('unload', function(event) {
+      if (window.retroBoardState.isInSession) {
+        console.log('Page unload event - leaving session');
+        if (window.flutterLeaveSession) {
+          window.flutterLeaveSession();
+        }
+      }
+    });
+    
+    // REMOVED: visibilitychange event listener that was causing issues
+    // We don't want to leave session when user just switches tabs
+    
+    // Handle page focus/blur events for logging only (no session leaving)
+    window.addEventListener('blur', function() {
+      console.log('Page lost focus (tab switch or window blur)');
+    });
+    
+    window.addEventListener('focus', function() {
+      console.log('Page gained focus (back to tab)');
+    });
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

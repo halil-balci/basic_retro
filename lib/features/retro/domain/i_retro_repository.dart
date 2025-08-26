@@ -5,7 +5,7 @@ import 'thought_group.dart';
 
 abstract class IRetroRepository {
   // Session management
-  Future<RetroSession> createSession(String name, String creatorId);
+  Future<RetroSession> createSession(String name, String creatorId, String creatorName);
   Future<RetroSession?> getSession(String sessionId);
   Stream<RetroSession?> getSessionStream(String sessionId);
   Future<RetroSession?> findSessionByName(String name);

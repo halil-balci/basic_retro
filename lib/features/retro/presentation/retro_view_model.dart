@@ -5,6 +5,7 @@ import '../domain/retro_phase.dart';
 import '../domain/thought_group.dart';
 import '../domain/i_retro_repository.dart';
 import '../../../core/constants/retro_constants.dart';
+import '../../../core/services/web_session_service.dart';
 
 class RetroViewModel extends ChangeNotifier {
   final IRetroRepository _repository;
@@ -30,6 +31,9 @@ class RetroViewModel extends ChangeNotifier {
     // Initialize user info from storage or create new
     _initializeUserInfo();
     _loadUserSessions();
+    
+    // Setup web session management
+    _setupWebSessionManagement();
   }
 
   List<RetroThought> get thoughts {
@@ -45,6 +49,27 @@ class RetroViewModel extends ChangeNotifier {
     // In a real app, you would get this from SharedPreferences or secure storage
     _currentUserId = _loadOrGenerateUserId();
     _currentUserName = _loadOrGenerateUsername();
+  }
+  
+  void _setupWebSessionManagement() {
+    // Setup web-specific session management
+    WebSessionService.setupFlutterWebBridge(() {
+      // This callback will be called when JavaScript detects page unload
+      _handleWebPageUnload();
+    });
+    
+    // Also setup direct browser event listeners as backup
+    WebSessionService.setupBrowserEventListeners(() {
+      _handleWebPageUnload();
+    });
+  }
+  
+  void _handleWebPageUnload() {
+    debugPrint('Web page unload detected - leaving session');
+    if (_currentSessionId != null) {
+      // Leave session immediately without waiting
+      leaveSession();
+    }
   }
 
   String _loadOrGenerateUserId() {
@@ -67,9 +92,12 @@ class RetroViewModel extends ChangeNotifier {
   Future<RetroSession?> createSession(String name) async {
     _setLoading(true);
     try {
-      final session = await _repository.createSession(name, _currentUserId);
+      final session = await _repository.createSession(name, _currentUserId, _currentUserName);
       _currentSessionId = session.id;
       _currentSession = session;
+      
+      // Register session with web service for cleanup
+      WebSessionService.registerSession(session.id, _currentUserId);
       
       // Add the new session to the list immediately
       _userSessions = [session, ..._userSessions];
@@ -110,6 +138,9 @@ class RetroViewModel extends ChangeNotifier {
       _currentSessionId = foundSession.id;
       _currentSession = foundSession;
       
+      // Register session with web service for cleanup
+      WebSessionService.registerSession(foundSession.id, _currentUserId);
+      
       // Add session to user's sessions if not already present
       if (!_userSessions.any((s) => s.id == foundSession?.id)) {
         final List<RetroSession> updatedSessions = List.from(_userSessions);
@@ -146,6 +177,9 @@ class RetroViewModel extends ChangeNotifier {
           
           // Join the new session as an active user
           await _repository.joinSession(sessionId, _currentUserId, _currentUserName);
+          
+          // Register session with web service for cleanup
+          WebSessionService.registerSession(sessionId, _currentUserId);
           
           _clearThoughts();
           _subscribeToSessionUpdates();
@@ -292,7 +326,19 @@ class RetroViewModel extends ChangeNotifier {
   Future<void> leaveSession() async {
     if (_currentSessionId != null) {
       try {
+        debugPrint('Leaving session: $_currentSessionId for user: $_currentUserId');
         await _repository.leaveSession(_currentSessionId!, _currentUserId);
+        
+        // Unregister from web service
+        WebSessionService.unregisterSession();
+        
+        // Clear local state
+        _currentSessionId = null;
+        _currentSession = null;
+        _clearThoughts();
+        
+        notifyListeners();
+        debugPrint('Successfully left session');
       } catch (e) {
         debugPrint('Error leaving session: $e');
       }

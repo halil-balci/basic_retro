@@ -63,6 +63,7 @@ class RetroSession {
       'creatorId': creatorId,
       'createdAt': createdAt.toIso8601String(),
       'participants': participants,
+      'activeUsers': activeUsers,
       'isActive': isActive,
       'columns': columns,
       'thoughts': thoughts.map((t) => t.toJson()).toList(),
