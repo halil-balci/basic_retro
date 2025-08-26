@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../domain/retro_phase.dart';
 import 'retro_view_model.dart';
@@ -148,8 +149,11 @@ class _RetroBoardViewState extends State<RetroBoardView> {
             PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'copy') {
+                  Clipboard.setData(ClipboardData(text: 'https://best-retro.web.app'));
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Session ID: ${widget.sessionId}')),
+                    SnackBar(
+                      content: Text('Session: https://best-retro.web.app'),
+                    ),
                   );
                 } else if (value == 'next' && viewModel.canAdvancePhase) {
                   _showAdvancePhaseConfirmation(viewModel);
@@ -226,15 +230,10 @@ class _RetroBoardViewState extends State<RetroBoardView> {
             IconButton(
               icon: const Icon(Icons.copy),
               onPressed: () {
+                Clipboard.setData(ClipboardData(text: 'https://best-retro.web.app'));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Session ID: ${widget.sessionId}'),
-                    action: SnackBarAction(
-                      label: 'Copy',
-                      onPressed: () {
-                        // TODO: Add clipboard functionality
-                      },
-                    ),
+                    content: Text('Session: https://best-retro.web.app'),
                   ),
                 );
               },

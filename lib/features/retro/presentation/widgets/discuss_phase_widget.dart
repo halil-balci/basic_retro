@@ -50,7 +50,7 @@ class DiscussPhaseWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'Tüm gruplar tartışıldı.',
+                  'All groups are discussed',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 24),
@@ -61,7 +61,7 @@ class DiscussPhaseWidget extends StatelessWidget {
                         }
                       : null,
                   icon: const Icon(Icons.flag),
-                  label: const Text('Bitir ve Geri Bildirim Aşamasına Geç'),
+                  label: const Text('Finish and Go to Notification Phase'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     backgroundColor: const Color(0xFF059669),
@@ -726,11 +726,11 @@ class DiscussPhaseWidget extends StatelessWidget {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case 'Start':
-        return Icons.lightbulb_rounded;
-      case 'Stop':
+      case 'Mad':
+        return Icons.not_interested;
+      case 'Sad':
         return Icons.thumb_down_rounded;
-      case 'Continue':
+      case 'Glad':
         return Icons.thumb_up_rounded;
       default:
         return Icons.note_rounded;

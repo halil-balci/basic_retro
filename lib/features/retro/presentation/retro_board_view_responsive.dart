@@ -56,7 +56,6 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final isSmallScreen = constraints.maxWidth < 600;
-            final isMediumScreen = constraints.maxWidth < 900;
             
             return Scaffold(
               backgroundColor: const Color(0xFFF8FAFC),
@@ -327,9 +326,7 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return const DiscussPhaseWidget();
       case RetroPhase.finish:
         return const FinishPhaseWidget();
-      default:
-        return const Center(child: Text('Unknown phase'));
-    }
+      }
   }
 
   Color _getPhaseColor(RetroPhase phase) {
@@ -344,9 +341,7 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return const Color(0xFF059669);
       case RetroPhase.finish:
         return const Color(0xFF6366F1);
-      default:
-        return const Color(0xFF6B7280);
-    }
+      }
   }
 
   IconData _getPhaseIcon(RetroPhase phase) {
@@ -361,25 +356,9 @@ class _RetroBoardViewState extends State<RetroBoardView> {
         return Icons.forum_rounded;
       case RetroPhase.finish:
         return Icons.flag_rounded;
-      default:
-        return Icons.help_rounded;
-    }
+      }
   }
 
-  String _getAdvanceRequirement(RetroPhase currentPhase) {
-    switch (currentPhase) {
-      case RetroPhase.editing:
-        return 'Add at least one thought to continue';
-      case RetroPhase.grouping:
-        return 'Create at least one group to continue';
-      case RetroPhase.voting:
-        return 'Vote on at least one group to continue';
-      case RetroPhase.discuss:
-        return 'Discuss all groups to continue';
-      default:
-        return '';
-    }
-  }
 
   void _showAdvancePhaseConfirmation(RetroViewModel viewModel) {
     final nextPhase = viewModel.currentSession!.nextPhase;
