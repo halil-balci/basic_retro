@@ -330,10 +330,12 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
     return thoughts
         .map((thought) => Container(
               margin: EdgeInsets.only(bottom: isSmallScreen ? 6 : 8),
-              child: _BlurredThoughtCard(
+              child: _EditableThoughtCard(
                 thought: thought,
                 shouldBlur: viewModel.shouldBlurThought(thought),
+                canEdit: viewModel.canEditThought(thought),
                 isSmallScreen: isSmallScreen,
+                onUpdate: (newContent) => viewModel.updateThought(thought, newContent),
               ),
             ))
         .toList();
@@ -381,35 +383,63 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
   }
 }
 
-class _BlurredThoughtCard extends StatelessWidget {
+class _EditableThoughtCard extends StatefulWidget {
   final RetroThought thought;
   final bool shouldBlur;
+  final bool canEdit;
   final bool isSmallScreen;
+  final Function(String) onUpdate;
 
-  const _BlurredThoughtCard({
+  const _EditableThoughtCard({
     required this.thought,
     required this.shouldBlur,
+    required this.canEdit,
+    required this.onUpdate,
     this.isSmallScreen = false,
   });
 
   @override
+  State<_EditableThoughtCard> createState() => _EditableThoughtCardState();
+}
+
+class _EditableThoughtCardState extends State<_EditableThoughtCard> {
+  bool _isEditing = false;
+  bool _isUpdating = false;
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.thought.content);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+      padding: EdgeInsets.all(widget.isSmallScreen ? 8 : 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: _isEditing ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+          width: _isEditing ? 2 : 1,
+        ),
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        child: shouldBlur
+        child: widget.shouldBlur
             ? Stack(
                 children: [
                   Text(
-                    thought.content,
+                    widget.thought.content,
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 13 : 14,
+                      fontSize: widget.isSmallScreen ? 13 : 14,
                       color: Colors.transparent,
                     ),
                   ),
@@ -423,22 +453,160 @@ class _BlurredThoughtCard extends StatelessWidget {
                         child: Icon(
                           Icons.visibility_off_rounded,
                           color: Color(0xFF6B7280),
-                          size: isSmallScreen ? 14 : 16,
+                          size: widget.isSmallScreen ? 14 : 16,
                         ),
                       ),
                     ),
                   ),
                 ],
               )
-            : Text(
-                thought.content,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 13 : 14,
-                  color: Color(0xFF374151),
-                  height: 1.4,
-                ),
-              ),
+            : _isEditing
+                ? Column(
+                    children: [
+                      TextField(
+                        controller: _controller,
+                        enabled: !_isUpdating,
+                        maxLines: null,
+                        style: TextStyle(
+                          fontSize: widget.isSmallScreen ? 13 : 14,
+                          color: const Color(0xFF374151),
+                          height: 1.4,
+                        ),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                          isDense: true,
+                        ),
+                        onSubmitted: (_) => _saveEdit(),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: _isUpdating ? null : _cancelEdit,
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF6B7280),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            ),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(fontSize: widget.isSmallScreen ? 12 : 14),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: _isUpdating ? null : _saveEdit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F46E5),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size.zero,
+                            ),
+                            child: _isUpdating
+                                ? SizedBox(
+                                    width: 12,
+                                    height: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Text(
+                                    'Save',
+                                    style: TextStyle(fontSize: widget.isSmallScreen ? 12 : 14),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.thought.content,
+                          style: TextStyle(
+                            fontSize: widget.isSmallScreen ? 13 : 14,
+                            color: const Color(0xFF374151),
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                      if (widget.canEdit) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _startEdit,
+                          icon: Icon(
+                            Icons.edit_rounded,
+                            size: widget.isSmallScreen ? 16 : 18,
+                            color: const Color(0xFF6B7280),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          padding: EdgeInsets.zero,
+                          tooltip: 'Edit thought',
+                        ),
+                      ],
+                    ],
+                  ),
       ),
     );
+  }
+
+  void _startEdit() {
+    setState(() {
+      _isEditing = true;
+      _controller.text = widget.thought.content;
+    });
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _isEditing = false;
+      _controller.text = widget.thought.content;
+    });
+  }
+
+  void _saveEdit() async {
+    final newContent = _controller.text.trim();
+    if (newContent.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thought cannot be empty'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (newContent == widget.thought.content) {
+      _cancelEdit();
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      await widget.onUpdate(newContent);
+      setState(() {
+        _isEditing = false;
+        _isUpdating = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating thought: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

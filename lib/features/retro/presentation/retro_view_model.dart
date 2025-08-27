@@ -228,6 +228,43 @@ class RetroViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> updateThought(RetroThought thought, String newContent) async {
+    if (_currentSessionId == null) {
+      debugPrint('No session selected');
+      throw Exception('No session selected');
+    }
+
+    if (newContent.trim().isEmpty) {
+      throw Exception('Thought content cannot be empty');
+    }
+
+    if (!canEditThought(thought)) {
+      throw Exception('You can only edit your own thoughts');
+    }
+
+    try {
+      debugPrint('Updating thought ${thought.id} in session: $_currentSessionId');
+      final updatedThought = RetroThought(
+        id: thought.id,
+        content: newContent.trim(),
+        authorId: thought.authorId,
+        authorName: thought.authorName,
+        timestamp: thought.timestamp,
+        category: thought.category,
+        comments: thought.comments,
+        likes: thought.likes,
+      );
+
+      await _repository.updateThought(_currentSessionId!, updatedThought);
+      debugPrint('Thought updated successfully');
+      
+      // Don't call _setLoading here - let the real-time listener handle the UI update
+    } catch (e) {
+      debugPrint('Error updating thought: $e');
+      rethrow;
+    }
+  }
+
   void _subscribeToSessionUpdates() {
     if (_currentSessionId != null) {
       debugPrint('Subscribing to thoughts for session: $_currentSessionId');
@@ -589,6 +626,10 @@ class RetroViewModel extends ChangeNotifier {
 
   bool shouldBlurThought(RetroThought thought) {
     return currentPhase == RetroPhase.editing && thought.authorId != _currentUserId;
+  }
+
+  bool canEditThought(RetroThought thought) {
+    return currentPhase == RetroPhase.editing && thought.authorId == _currentUserId;
   }
 
   String getCurrentUserId() {
