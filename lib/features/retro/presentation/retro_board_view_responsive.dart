@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../domain/retro_phase.dart';
+import '../domain/entities/retro_phase.dart';
 import 'retro_view_model.dart';
 import 'widgets/editing_phase_widget.dart';
 import 'widgets/grouping_phase_widget.dart';

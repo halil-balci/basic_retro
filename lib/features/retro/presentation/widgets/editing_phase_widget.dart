@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../domain/retro_thought.dart';
+import '../../domain/entities/retro_thought.dart';
 import '../retro_view_model.dart';
 import '../../../../core/constants/retro_constants.dart';
 

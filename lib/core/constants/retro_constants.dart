@@ -6,6 +6,9 @@ class RetroConstants {
     'Glad',
   ];
   
+  // Voting configuration
+  static const int maxVotesPerUser = 6; // Her kullanıcı maksimum 6 oy kullanabilir
+  
   // Kategori başlıkları
   static Map<String, String> categoryTitles = {
     categories[0]: 'Sad',
@@ -15,8 +18,8 @@ class RetroConstants {
   
   // Kategori açıklamaları
   static Map<String, String> categoryDescriptions = {
-    categories[0]: 'What is driving you crazy? ',
-    categories[1]: 'What is disappointing you? ',
+    categories[0]: 'What is disappointing you? ',
+    categories[1]: 'What is driving you crazy? ',
     categories[2]: 'What is making you happy? ',
   };
   

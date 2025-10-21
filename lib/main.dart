@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'features/retro/data/firebase_retro_repository.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'core/di/injection.dart';
 import 'features/retro/presentation/welcome_view.dart';
 import 'features/retro/presentation/retro_view_model.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize dependencies
+  await initializeDependencies();
+  
   runApp(const MyApp());
 }
 
@@ -23,14 +29,21 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (context) => RetroViewModel(
-            FirebaseRetroRepository(FirebaseFirestore.instance),
-          ),
+          create: (context) => getIt<RetroViewModel>(),
         ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Retro Board',
+        builder: (context, child) => ResponsiveBreakpoints.builder(
+          child: child!,
+          breakpoints: [
+            const Breakpoint(start: 0, end: 450, name: MOBILE),
+            const Breakpoint(start: 451, end: 800, name: TABLET),
+            const Breakpoint(start: 801, end: 1920, name: DESKTOP),
+            const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+          ],
+        ),
         theme: ThemeData(
           primarySwatch: Colors.indigo,
           brightness: Brightness.light,

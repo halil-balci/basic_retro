@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/presentation/layouts/responsive_layout.dart';
 import 'retro_board_view.dart';
 import 'retro_view_model.dart';
 
@@ -78,6 +79,25 @@ class _WelcomeViewState extends State<WelcomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final padding = context.responsivePadding;
+    final titleSize = context.responsiveTitleSize;
+    final fontSize = context.responsiveFontSize;
+    
+    // Responsive icon and card dimensions
+    final iconSize = ResponsiveLayout.getResponsiveValue<double>(
+      context: context,
+      mobile: 60.0,
+      tablet: 80.0,
+      desktop: 100.0,
+    );
+    
+    final maxWidth = ResponsiveLayout.getResponsiveValue<double>(
+      context: context,
+      mobile: 420.0,
+      tablet: 500.0,
+      desktop: 600.0,
+    );
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -93,33 +113,33 @@ class _WelcomeViewState extends State<WelcomeView> {
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(padding),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+                constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Logo/Icon
                     Container(
-                      width: 80,
-                      height: 80,
+                      width: iconSize,
+                      height: iconSize,
                       decoration: BoxDecoration(
                         color: const Color(0xFF4F46E5),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.dashboard_rounded,
                         color: Colors.white,
-                        size: 40,
+                        size: iconSize * 0.5,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
+                    SizedBox(height: padding),
+                    Text(
                       'Retro Board',
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: titleSize + 8,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E293B),
+                        color: const Color(0xFF1E293B),
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -127,38 +147,40 @@ class _WelcomeViewState extends State<WelcomeView> {
                     Text(
                       'Collaborate and reflect with your team',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: fontSize,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w400,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 48),
+                    SizedBox(height: padding * 2),
                     Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(32.0),
+                        padding: EdgeInsets.all(padding * 1.5),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
+                            Text(
                               'Join Session',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: titleSize,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E293B),
+                                color: const Color(0xFF1E293B),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Enter a session name to join existing or create new',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: fontSize - 1,
                                 color: Colors.grey.shade600,
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            SizedBox(height: padding),
                             TextField(
                               controller: _sessionNameController,
+                              style: TextStyle(fontSize: fontSize),
                               decoration: const InputDecoration(
                                 labelText: 'Session Name',
                                 hintText: 'e.g., Sprint Planning 2024',
@@ -166,11 +188,13 @@ class _WelcomeViewState extends State<WelcomeView> {
                               ),
                               onSubmitted: (_) => _handleSessionNameSubmit(),
                             ),
-                            const SizedBox(height: 24),
+                            SizedBox(height: padding),
                             ElevatedButton(
                               onPressed: _isLoading ? null : _handleSessionNameSubmit,
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: context.isMobile ? 14 : 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -184,10 +208,10 @@ class _WelcomeViewState extends State<WelcomeView> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     'Join Session',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: fontSize,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

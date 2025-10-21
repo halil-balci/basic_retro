@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../domain/thought_group.dart';
-import '../../domain/retro_thought.dart';
+import '../../domain/entities/thought_group.dart';
+import '../../domain/entities/retro_thought.dart';
 import '../retro_view_model.dart';
 import 'finish_phase_widget.dart';
 import '../../../../core/constants/retro_constants.dart';

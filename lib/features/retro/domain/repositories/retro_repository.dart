@@ -1,9 +1,10 @@
-import 'retro_thought.dart';
-import 'retro_session.dart';
-import 'retro_phase.dart';
-import 'thought_group.dart';
+import '../entities/retro_thought.dart';
+import '../entities/retro_session.dart';
+import '../entities/retro_phase.dart';
+import '../entities/thought_group.dart';
 
-abstract class IRetroRepository {
+/// Domain repository interface for retro feature
+abstract class RetroRepository {
   // Session management
   Future<RetroSession> createSession(String name, String creatorId, String creatorName);
   Future<RetroSession?> getSession(String sessionId);

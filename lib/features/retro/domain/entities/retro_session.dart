@@ -1,7 +1,7 @@
 import 'retro_thought.dart';
 import 'retro_phase.dart';
 import 'thought_group.dart';
-import '../../../core/constants/retro_constants.dart';
+import '../../../../core/constants/retro_constants.dart';
 
 class RetroSession {
   final String id;

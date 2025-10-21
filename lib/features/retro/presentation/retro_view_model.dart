@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
-import '../domain/retro_thought.dart';
-import '../domain/retro_session.dart';
-import '../domain/retro_phase.dart';
-import '../domain/thought_group.dart';
-import '../domain/i_retro_repository.dart';
+import '../domain/entities/retro_thought.dart';
+import '../domain/entities/retro_session.dart';
+import '../domain/entities/retro_phase.dart';
+import '../domain/entities/thought_group.dart';
+import '../domain/repositories/retro_repository.dart';
 import '../../../core/constants/retro_constants.dart';
 import '../../../core/services/web_session_service.dart';
 
 class RetroViewModel extends ChangeNotifier {
-  final IRetroRepository _repository;
+  final RetroRepository _repository;
   late final String _currentUserId;
   late final String _currentUserName;
   
@@ -435,9 +435,20 @@ class RetroViewModel extends ChangeNotifier {
   Future<void> _initializeUserVotes() async {
     if (_currentSessionId == null || _currentSession == null) return;
     
-    final userVotes = <String, int>{};
+    // Get existing votes or create new map
+    final userVotes = Map<String, int>.from(_currentSession!.userVotes);
+    
+    // Give votes to all active users
     for (final userId in _currentSession!.activeUsers.keys) {
-      userVotes[userId] = 3; // Each user gets 3 votes
+      // Only initialize if user doesn't have votes yet
+      if (!userVotes.containsKey(userId)) {
+        userVotes[userId] = RetroConstants.maxVotesPerUser;
+      }
+    }
+    
+    // Make sure current user has votes
+    if (!userVotes.containsKey(_currentUserId)) {
+      userVotes[_currentUserId] = RetroConstants.maxVotesPerUser;
     }
     
     await _repository.updateUserVotes(_currentSessionId!, userVotes);
@@ -578,9 +589,22 @@ class RetroViewModel extends ChangeNotifier {
   Future<void> voteForGroup(String groupId) async {
     if (_currentSessionId == null || _currentSession == null) return;
     
+    // Check if user has votes initialized
     final remainingVotes = _currentSession!.getUserRemainingVotes(_currentUserId);
+    
+    // If user doesn't have votes yet (shouldn't happen, but safety check)
     if (remainingVotes <= 0) {
-      throw Exception('No votes remaining');
+      // Try to initialize votes for this user
+      final updatedVotes = Map<String, int>.from(_currentSession!.userVotes);
+      if (!updatedVotes.containsKey(_currentUserId)) {
+        debugPrint('User $_currentUserId does not have votes. Initializing...');
+        updatedVotes[_currentUserId] = RetroConstants.maxVotesPerUser;
+        await _repository.updateUserVotes(_currentSessionId!, updatedVotes);
+        // Wait for update to propagate
+        await Future.delayed(const Duration(milliseconds: 100));
+      } else {
+        throw Exception('No votes remaining');
+      }
     }
     
     await _repository.voteForGroup(_currentSessionId!, groupId, _currentUserId);
@@ -621,7 +645,7 @@ class RetroViewModel extends ChangeNotifier {
   ThoughtGroup? get currentDiscussionGroup => _currentSession?.currentDiscussionGroup;
   
   int getUserRemainingVotes() {
-    return _currentSession?.getUserRemainingVotes(_currentUserId) ?? 3;
+    return _currentSession?.getUserRemainingVotes(_currentUserId) ?? RetroConstants.maxVotesPerUser;
   }
 
   bool shouldBlurThought(RetroThought thought) {
