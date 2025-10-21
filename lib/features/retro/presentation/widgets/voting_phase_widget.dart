@@ -358,12 +358,6 @@ class _VotableThoughtCard extends StatelessWidget {
     final remainingVotes = viewModel.getUserRemainingVotes();
     
     if (remainingVotes <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No votes remaining!'),
-          backgroundColor: Colors.red,
-        ),
-      );
       return;
     }
 
@@ -417,16 +411,6 @@ class _VotableThoughtCard extends StatelessWidget {
       
       if (groupsWithThought.isNotEmpty) {
         await viewModel.removeVoteFromGroup(groupsWithThought.first.id);
-        
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Vote removed successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -470,6 +454,9 @@ class _VotableGroupCard extends StatelessWidget {
         onTap: () => _handleGroupTap(context, group, viewModel),
         borderRadius: BorderRadius.circular(8),
         child: Container(
+          constraints: const BoxConstraints(
+            maxHeight: 200, // Maximum height to prevent overflow
+          ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
@@ -478,9 +465,11 @@ class _VotableGroupCard extends StatelessWidget {
                 ? Border.all(color: Colors.green, width: 2)
                 : Border.all(color: Colors.amber, width: 2),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // Group header
               Row(
                 children: [
@@ -494,26 +483,39 @@ class _VotableGroupCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: Colors.amber.shade700,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   // Show user's own vote and remove option
                   if (hasUserVoted) ...[
+                    const SizedBox(width: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(
-                        'You voted ($userVoteCount)',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '$userVoteCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () => _handleGroupRemoveVote(context, group, viewModel),
                       child: Container(
@@ -537,51 +539,56 @@ class _VotableGroupCard extends StatelessWidget {
               ...thoughtsByCategory.entries.map((entry) {
                 final categoryName = entry.key;
                 final categoryThoughts = entry.value;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Category header if more than one category
-                    if (thoughtsByCategory.length > 1) ...[
-                      Text(
-                        '$categoryName:',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                    // Show thoughts from this category (max 2 per category)
-                    ...categoryThoughts.take(2).map((thought) => Padding(
-                      padding: EdgeInsets.only(
-                        bottom: 4, 
-                        left: thoughtsByCategory.length > 1 ? 12 : 0
-                      ),
-                      child: Text(
-                        thought.content,
-                        style: const TextStyle(fontSize: 12),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    )),
-                    if (categoryThoughts.length > 2)
-                      Padding(
-                        padding: EdgeInsets.only(left: thoughtsByCategory.length > 1 ? 12 : 0),
-                        child: Text(
-                          '+${categoryThoughts.length - 2} more...',
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Category header if more than one category
+                      if (thoughtsByCategory.length > 1) ...[
+                        Text(
+                          '$categoryName:',
                           style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey.shade600,
-                            fontStyle: FontStyle.italic,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      // Show thoughts from this category (max 2 per category)
+                      ...categoryThoughts.take(2).map((thought) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: 4, 
+                          left: thoughtsByCategory.length > 1 ? 12 : 0
+                        ),
+                        child: Text(
+                          thought.content,
+                          style: const TextStyle(fontSize: 11),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )),
+                      if (categoryThoughts.length > 2)
+                        Padding(
+                          padding: EdgeInsets.only(left: thoughtsByCategory.length > 1 ? 12 : 0),
+                          child: Text(
+                            '+${categoryThoughts.length - 2} more...',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ),
-                      ),
-                    if (thoughtsByCategory.length > 1) const SizedBox(height: 4),
-                  ],
+                    ],
+                  ),
                 );
               }).toList(),
             ],
+          ),
           ),
         ),
       ),
@@ -592,12 +599,6 @@ class _VotableGroupCard extends StatelessWidget {
     final remainingVotes = viewModel.getUserRemainingVotes();
     
     if (remainingVotes <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No votes remaining!'),
-          backgroundColor: Colors.red,
-        ),
-      );
       return;
     }
 
@@ -618,16 +619,7 @@ class _VotableGroupCard extends StatelessWidget {
   void _handleGroupRemoveVote(BuildContext context, ThoughtGroup group, RetroViewModel viewModel) async {
     try {
       await viewModel.removeVoteFromGroup(group.id);
-      
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vote removed successfully!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
+    
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
