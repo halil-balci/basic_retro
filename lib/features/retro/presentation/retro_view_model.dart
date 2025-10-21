@@ -265,6 +265,28 @@ class RetroViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteThought(RetroThought thought) async {
+    if (_currentSessionId == null) {
+      debugPrint('No session selected');
+      throw Exception('No session selected');
+    }
+
+    if (!canEditThought(thought)) {
+      throw Exception('You can only delete your own thoughts');
+    }
+
+    try {
+      debugPrint('Deleting thought ${thought.id} in session: $_currentSessionId');
+      await _repository.deleteThought(_currentSessionId!, thought.id);
+      debugPrint('Thought deleted successfully');
+      
+      // Don't call _setLoading here - let the real-time listener handle the UI update
+    } catch (e) {
+      debugPrint('Error deleting thought: $e');
+      rethrow;
+    }
+  }
+
   void _subscribeToSessionUpdates() {
     if (_currentSessionId != null) {
       debugPrint('Subscribing to thoughts for session: $_currentSessionId');

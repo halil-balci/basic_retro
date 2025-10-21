@@ -336,6 +336,7 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                 canEdit: viewModel.canEditThought(thought),
                 isSmallScreen: isSmallScreen,
                 onUpdate: (newContent) => viewModel.updateThought(thought, newContent),
+                onDelete: () => viewModel.deleteThought(thought),
               ),
             ))
         .toList();
@@ -389,12 +390,14 @@ class _EditableThoughtCard extends StatefulWidget {
   final bool canEdit;
   final bool isSmallScreen;
   final Function(String) onUpdate;
+  final Future<void> Function() onDelete;
 
   const _EditableThoughtCard({
     required this.thought,
     required this.shouldBlur,
     required this.canEdit,
     required this.onUpdate,
+    required this.onDelete,
     this.isSmallScreen = false,
   });
 
@@ -546,6 +549,17 @@ class _EditableThoughtCardState extends State<_EditableThoughtCard> {
                           padding: EdgeInsets.zero,
                           tooltip: 'Edit thought',
                         ),
+                        IconButton(
+                          onPressed: _confirmDelete,
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            size: widget.isSmallScreen ? 16 : 18,
+                            color: const Color(0xFFEF4444),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          padding: EdgeInsets.zero,
+                          tooltip: 'Delete thought',
+                        ),
                       ],
                     ],
                   ),
@@ -609,4 +623,45 @@ class _EditableThoughtCardState extends State<_EditableThoughtCard> {
       }
     }
   }
+
+  void _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Thought'),
+        content: const Text('Are you sure you want to delete this thought? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await widget.onDelete();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting thought: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
 }
+
