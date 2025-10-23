@@ -250,7 +250,10 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
             child: TextField(
               controller: _controllers[category],
               enabled: !(_isAdding[category] ?? false),
-              maxLines: isSmallScreen ? 2 : null,
+              minLines: 1,
+              maxLines: 5,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
               style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
               decoration: InputDecoration(
                 hintText: RetroConstants.categoryDescriptions[category] ?? 'Add a $category item...',
@@ -260,7 +263,7 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: isSmallScreen ? 12 : 16,
-                  vertical: isSmallScreen ? 8 : 12,
+                  vertical: 12,
                 ),
                 suffixIcon: Container(
                   margin: const EdgeInsets.all(4),
@@ -277,7 +280,7 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                               width: isSmallScreen ? 14 : 16,
                               height: isSmallScreen ? 14 : 16,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: 1,
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
@@ -293,7 +296,6 @@ class _EditingPhaseWidgetState extends State<EditingPhaseWidget> {
                         ),
                 ),
               ),
-              onSubmitted: (_) => _addThought(category, viewModel),
             ),
           ),
           // Thoughts list
@@ -437,31 +439,29 @@ class _EditableThoughtCardState extends State<_EditableThoughtCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         child: widget.shouldBlur
-            ? Stack(
-                children: [
-                  Text(
-                    widget.thought.content,
-                    style: TextStyle(
-                      fontSize: widget.isSmallScreen ? 13 : 14,
-                      color: Colors.transparent,
-                    ),
+            ? Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: widget.isSmallScreen ? 12 : 16,
+                  horizontal: widget.isSmallScreen ? 8 : 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6B7280).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.visibility_off_rounded,
+                        color: Color(0xFF6B7280),
+                        size: widget.isSmallScreen ? 20 : 24,
+                      )
+                    ],
                   ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6B7280).withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.visibility_off_rounded,
-                          color: Color(0xFF6B7280),
-                          size: widget.isSmallScreen ? 14 : 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               )
             : _isEditing
                 ? Column(

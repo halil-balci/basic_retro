@@ -167,25 +167,24 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
                 ),
               ),
               // Content
-              Flexible(
-                child: SizeTransition(
-                  sizeFactor: _expandAnimation,
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(widget.isSmallScreen ? 12 : 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Add new action item
-                        Container(
-                          padding: EdgeInsets.all(widget.isSmallScreen ? 10 : 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0),
-                            ),
+              SizeTransition(
+                sizeFactor: _expandAnimation,
+                child: Padding(
+                  padding: EdgeInsets.all(widget.isSmallScreen ? 12 : 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Add new action item
+                      Container(
+                        padding: EdgeInsets.all(widget.isSmallScreen ? 10 : 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
                           ),
-                          child: Column(
+                        ),
+                        child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               TextField(
@@ -246,38 +245,37 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
                                   style: TextStyle(fontSize: widget.isSmallScreen ? 12 : 14),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6366F1),
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: widget.isSmallScreen ? 12 : 16,
-                                    vertical: widget.isSmallScreen ? 8 : 12,
-                                  ),
+                                backgroundColor: const Color(0xFF6366F1),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: widget.isSmallScreen ? 12 : 16,
+                                  vertical: widget.isSmallScreen ? 8 : 12,
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (actionItems.isNotEmpty) ...[
+                        SizedBox(height: widget.isSmallScreen ? 12 : 16),
+                        Text(
+                          'Current Actions:',
+                          style: TextStyle(
+                            fontSize: widget.isSmallScreen ? 13 : 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
                           ),
                         ),
-                        if (actionItems.isNotEmpty) ...[
-                          SizedBox(height: widget.isSmallScreen ? 12 : 16),
-                          Text(
-                            'Current Actions:',
-                            style: TextStyle(
-                              fontSize: widget.isSmallScreen ? 13 : 14,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF374151),
-                            ),
-                          ),
-                          SizedBox(height: widget.isSmallScreen ? 8 : 10),
-                          ...actionItems.map((item) => _ActionItemCard(
-                                actionItem: item,
-                                isSmallScreen: widget.isSmallScreen,
-                                onUpdate: (updated) => viewModel.updateActionItem(updated),
-                                onDelete: () => viewModel.deleteActionItem(item.id),
-                                canEdit: true, // Tüm kullanıcılar düzenleyebilir
-                              )),
-                        ],
+                        SizedBox(height: widget.isSmallScreen ? 8 : 10),
+                        ...actionItems.map((item) => _ActionItemCard(
+                              actionItem: item,
+                              isSmallScreen: widget.isSmallScreen,
+                              onUpdate: (updated) => viewModel.updateActionItem(updated),
+                              onDelete: () => viewModel.deleteActionItem(item.id),
+                              canEdit: true, // Tüm kullanıcılar düzenleyebilir
+                            )),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),

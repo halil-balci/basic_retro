@@ -79,99 +79,65 @@ class DiscussPhaseWidget extends StatelessWidget {
             final isSmallScreen = constraints.maxWidth < 600;
             final isVerySmallScreen = constraints.maxWidth < 400;
             
-            return Column(
-              children: [
-                // Header card with modern design - responsive
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(isVerySmallScreen ? 12 : (isSmallScreen ? 16 : 20)),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF059669), Color(0xFF047857)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+            return currentGroup != null
+              ? SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16),
                   ),
-                  child: isSmallScreen 
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(isVerySmallScreen ? 4 : 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.forum,
-                                  color: Colors.white,
-                                  size: isVerySmallScreen ? 16 : 20,
-                                ),
-                              ),
-                              SizedBox(width: isVerySmallScreen ? 8 : 12),
-                              Expanded(
-                                child: Text(
-                                  'Discussion Phase',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: isVerySmallScreen ? 14 : 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                      // Header card with modern design - responsive
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isVerySmallScreen ? 12 : (isSmallScreen ? 16 : 20)),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF059669), Color(0xFF047857)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          SizedBox(height: isVerySmallScreen ? 6 : 8),
-                          Text(
-                            'Discuss each group ordered by votes (highest to lowest)',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isVerySmallScreen ? 11 : 13,
-                              fontWeight: FontWeight.w400,
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.forum,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: isSmallScreen 
+                          ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Discussion Phase',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(isVerySmallScreen ? 4 : 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.forum,
+                                        color: Colors.white,
+                                        size: isVerySmallScreen ? 16 : 20,
+                                      ),
+                                    ),
+                                    SizedBox(width: isVerySmallScreen ? 8 : 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Discussion Phase',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: isVerySmallScreen ? 14 : 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: isVerySmallScreen ? 6 : 8),
                                 Text(
                                   'Discuss each group ordered by votes (highest to lowest)',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 14,
+                                    fontSize: isVerySmallScreen ? 11 : 13,
                                     fontWeight: FontWeight.w400,
                                     height: 1.3,
                                   ),
@@ -179,22 +145,57 @@ class DiscussPhaseWidget extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
+                            )
+                          : Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.forum,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Discussion Phase',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Discuss each group ordered by votes (highest to lowest)',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w400,
+                                          height: 1.3,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
                       ),
-                ),
-                SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-                if (currentGroup != null) ...[
-                  _buildNavigationBar(currentIndex, sortedGroups.length, viewModel, isSmallScreen, isVerySmallScreen),
-                  SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-                  Expanded(
-                    child: isSmallScreen
-                      ? SingleChildScrollView(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isVerySmallScreen ? 8 : 12,
-                          ),
-                          child: Column(
+                      SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                      _buildNavigationBar(currentIndex, sortedGroups.length, viewModel, isSmallScreen, isVerySmallScreen),
+                      SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                      isSmallScreen
+                        ? Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               _buildCurrentGroupDisplay(
@@ -210,78 +211,64 @@ class DiscussPhaseWidget extends StatelessWidget {
                               ),
                               const SizedBox(height: 20),
                             ],
-                          ),
-                        )
-                      : LayoutBuilder(
-                          builder: (context, constraints) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Ana içerik - sol taraf
-                                  Expanded(
-                                    flex: 2,
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          _buildCurrentGroupDisplay(
-                                            currentGroup, 
-                                            currentIndex + 1, 
-                                            sortedGroups.length, 
-                                            false,
-                                            false,
-                                          ),
-                                          const SizedBox(height: 20),
-                                        ],
-                                      ),
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Ana içerik - sol taraf
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildCurrentGroupDisplay(
+                                      currentGroup, 
+                                      currentIndex + 1, 
+                                      sortedGroups.length, 
+                                      false,
+                                      false,
                                     ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  // Action Items - sağ taraf (yükseklik sınırlı)
-                                  SizedBox(
-                                    width: 400,
-                                    height: constraints.maxHeight,
-                                    child: const ActionItemsPanel(
-                                      isSmallScreen: false,
-                                    ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
                               ),
-                            );
-                          },
+                              const SizedBox(width: 20),
+                              // Action Items - sağ taraf
+                              const SizedBox(
+                                width: 400,
+                                child: ActionItemsPanel(
+                                  isSmallScreen: false,
+                                ),
+                              ),
+                            ],
+                          ),
+                    ],
+                  ),
+                )
+              : Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'No groups available for discussion.',
+                        style: TextStyle(
+                          fontSize: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16), 
+                          color: Colors.grey
                         ),
-                  ),
-                ] else
-                  Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'No groups available for discussion.',
-                            style: TextStyle(
-                              fontSize: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16), 
-                              color: Colors.grey
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-                          ElevatedButton(
-                            onPressed: () => _createGroupsFromThoughts(viewModel),
-                            child: Text(
-                              'Create Groups from Thoughts',
-                              style: TextStyle(fontSize: isVerySmallScreen ? 11 : (isSmallScreen ? 13 : 14)),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
+                        textAlign: TextAlign.center,
                       ),
-                    ),
+                      SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                      ElevatedButton(
+                        onPressed: () => _createGroupsFromThoughts(viewModel),
+                        child: Text(
+                          'Create Groups from Thoughts',
+                          style: TextStyle(fontSize: isVerySmallScreen ? 11 : (isSmallScreen ? 13 : 14)),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            );
+                );
           },
         );
       },
