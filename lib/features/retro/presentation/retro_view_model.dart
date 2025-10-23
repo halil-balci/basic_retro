@@ -27,6 +27,10 @@ class RetroViewModel extends ChangeNotifier {
 
   List<ActionItem> _actionItems = [];
   List<ActionItem> get actionItems => _actionItems;
+  
+  // Cached action items for finish phase (stored before clearing)
+  List<ActionItem> _cachedActionItems = [];
+  List<ActionItem> get cachedActionItems => _cachedActionItems;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -413,6 +417,7 @@ class RetroViewModel extends ChangeNotifier {
         _currentSessionId = null;
         _currentSession = null;
         _clearThoughts();
+        _cachedActionItems = []; // Clear cached action items when leaving
         
         notifyListeners();
         debugPrint('Successfully left session');
@@ -466,8 +471,31 @@ class RetroViewModel extends ChangeNotifier {
         await _createInitialGroups();
       }
       
+      // If advancing to finish phase, clear all session data
+      if (nextPhase == RetroPhase.finish) {
+        await _clearSessionDataOnFinish();
+      }
+      
     } catch (e) {
       debugPrint('Error advancing phase: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _clearSessionDataOnFinish() async {
+    if (_currentSessionId == null) return;
+    
+    try {
+      debugPrint('Caching action items before clearing session data...');
+      // Cache current action items before clearing
+      _cachedActionItems = List.from(_actionItems);
+      debugPrint('Cached ${_cachedActionItems.length} action items');
+      
+      debugPrint('Clearing session data on finish phase...');
+      await _repository.clearSessionData(_currentSessionId!);
+      debugPrint('Session data cleared successfully');
+    } catch (e) {
+      debugPrint('Error clearing session data: $e');
       rethrow;
     }
   }

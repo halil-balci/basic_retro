@@ -81,7 +81,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                       children: [
                         // Action Items card
                         Expanded(
-                          child: viewModel.actionItems.isNotEmpty
+                          child: viewModel.cachedActionItems.isNotEmpty
                               ? _buildActionItemsSummary(viewModel)
                               : _buildEmptyActionItemsCard(),
                         ),
@@ -581,7 +581,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                       SizedBox(height: isVerySmallScreen ? 16 : (isSmallScreen ? 20 : 24)),
                       
                       // 3. Action Items Summary (if available)
-                      if (viewModel.actionItems.isNotEmpty) ...[
+                      if (viewModel.cachedActionItems.isNotEmpty) ...[
                         _buildActionItemsSummarySmallScreen(viewModel, isVerySmallScreen, isSmallScreen),
                         SizedBox(height: isVerySmallScreen ? 16 : (isSmallScreen ? 20 : 24)),
                       ],
@@ -753,7 +753,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
   }
 
   Widget _buildActionItemsSummarySmallScreen(RetroViewModel viewModel, bool isVerySmallScreen, bool isSmallScreen) {
-    final totalCount = viewModel.actionItems.length;
+    final totalCount = viewModel.cachedActionItems.length;
     
     return Container(
       width: double.infinity,
@@ -836,7 +836,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
   }
 
   Widget _buildActionItemsSummary(RetroViewModel viewModel) {
-    final totalCount = viewModel.actionItems.length;
+    final totalCount = viewModel.cachedActionItems.length;
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -954,7 +954,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
 
     try {
       ActionItemExportService.exportToText(
-        actionItems: viewModel.actionItems,
+        actionItems: viewModel.cachedActionItems,
         groups: viewModel.currentGroups,
         session: viewModel.currentSession!,
       );
@@ -963,4 +963,3 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
     }
   }
 }
-

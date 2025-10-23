@@ -214,5 +214,9 @@ class RetroRepositoryImpl implements RetroRepository {
   Future<void> deleteActionItem(String sessionId, String actionItemId) async {
     await _dataSource.deleteActionItem(sessionId, actionItemId);
   }
-}
 
+  @override
+  Future<void> clearSessionData(String sessionId) async {
+    await _dataSource.clearSessionData(sessionId);
+  }
+}

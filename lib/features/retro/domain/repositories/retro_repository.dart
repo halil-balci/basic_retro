@@ -48,5 +48,8 @@ abstract class RetroRepository {
   Future<void> addActionItem(String sessionId, ActionItem actionItem);
   Future<void> updateActionItem(String sessionId, ActionItem actionItem);
   Future<void> deleteActionItem(String sessionId, String actionItemId);
+  
+  // Session data cleanup
+  Future<void> clearSessionData(String sessionId);
 }
 

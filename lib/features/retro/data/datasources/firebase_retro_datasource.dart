@@ -387,5 +387,41 @@ class FirebaseRetroDataSource {
         .doc(actionItemId)
         .delete();
   }
-}
 
+  // Clear all session data (thoughts, groups, votes, action items)
+  Future<void> clearSessionData(String sessionId) async {
+    final batch = _firestore.batch();
+    
+    // Clear thoughts subcollection
+    final thoughtsSnapshot = await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_thoughtsCollection)
+        .get();
+    
+    for (var doc in thoughtsSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    
+    // Clear action items subcollection
+    final actionItemsSnapshot = await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_actionItemsCollection)
+        .get();
+    
+    for (var doc in actionItemsSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    
+    // Clear session-level data (groups, votes, discussion index)
+    final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+    batch.update(sessionRef, {
+      'groups': [],
+      'userVotes': {},
+      'currentDiscussionGroupIndex': 0,
+    });
+    
+    await batch.commit();
+  }
+}
