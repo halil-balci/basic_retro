@@ -2,11 +2,13 @@ import '../../domain/entities/retro_session.dart';
 import '../../domain/entities/retro_thought.dart';
 import '../../domain/entities/retro_phase.dart';
 import '../../domain/entities/thought_group.dart';
+import '../../domain/entities/action_item.dart';
 import '../../domain/repositories/retro_repository.dart';
 import '../datasources/firebase_retro_datasource.dart';
 import '../models/retro_session_model.dart';
 import '../models/retro_thought_model.dart';
 import '../models/thought_group_model.dart';
+import '../models/action_item_model.dart';
 
 /// Implementation of RetroRepository using Firebase
 class RetroRepositoryImpl implements RetroRepository {
@@ -188,4 +190,29 @@ class RetroRepositoryImpl implements RetroRepository {
   Future<void> updateDiscussionGroupIndex(String sessionId, int index) async {
     await _dataSource.updateDiscussionGroupIndex(sessionId, index);
   }
+
+  @override
+  Stream<List<ActionItem>> getSessionActionItems(String sessionId) {
+    return _dataSource.getSessionActionItems(sessionId).map(
+          (models) => models.map((model) => model.toEntity()).toList(),
+        );
+  }
+
+  @override
+  Future<void> addActionItem(String sessionId, ActionItem actionItem) async {
+    final model = ActionItemModel.fromEntity(actionItem);
+    await _dataSource.addActionItem(sessionId, model);
+  }
+
+  @override
+  Future<void> updateActionItem(String sessionId, ActionItem actionItem) async {
+    final model = ActionItemModel.fromEntity(actionItem);
+    await _dataSource.updateActionItem(sessionId, model);
+  }
+
+  @override
+  Future<void> deleteActionItem(String sessionId, String actionItemId) async {
+    await _dataSource.deleteActionItem(sessionId, actionItemId);
+  }
 }
+

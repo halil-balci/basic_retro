@@ -3,6 +3,7 @@ import '../domain/entities/retro_thought.dart';
 import '../domain/entities/retro_session.dart';
 import '../domain/entities/retro_phase.dart';
 import '../domain/entities/thought_group.dart';
+import '../domain/entities/action_item.dart';
 import '../domain/repositories/retro_repository.dart';
 import '../../../core/constants/retro_constants.dart';
 import '../../../core/services/web_session_service.dart';
@@ -23,6 +24,9 @@ class RetroViewModel extends ChangeNotifier {
 
   Map<String, List<RetroThought>> _thoughtsByCategory = RetroConstants.createEmptyCategoryMap<RetroThought>();
   Map<String, List<RetroThought>> get thoughtsByCategory => _thoughtsByCategory;
+
+  List<ActionItem> _actionItems = [];
+  List<ActionItem> get actionItems => _actionItems;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -332,6 +336,20 @@ class RetroViewModel extends ChangeNotifier {
       } catch (e) {
         debugPrint('Groups subscription not available: $e');
       }
+
+      // Subscribe to action items
+      _repository.getSessionActionItems(_currentSessionId!).listen(
+        (items) {
+          debugPrint('Received ${items.length} action items');
+          if (_currentSessionId != null) {
+            _actionItems = items;
+            notifyListeners();
+          }
+        },
+        onError: (error) {
+          debugPrint('Error loading action items: $error');
+        },
+      );
     }
   }
 
@@ -681,4 +699,73 @@ class RetroViewModel extends ChangeNotifier {
   String getCurrentUserId() {
     return _currentUserId;
   }
+
+  String getCurrentUserName() {
+    return _currentUserName;
+  }
+
+  // Action items management
+  Future<void> addActionItem(String content, String groupId, {String? assignee}) async {
+    if (_currentSessionId == null) {
+      debugPrint('No session selected');
+      throw Exception('No session selected');
+    }
+
+    if (content.trim().isEmpty) {
+      throw Exception('Action item content cannot be empty');
+    }
+
+    try {
+      debugPrint('Adding action item to session: $_currentSessionId');
+      final actionItem = ActionItem(
+        id: '', // Will be set by Firebase
+        groupId: groupId,
+        content: content.trim(),
+        assignee: assignee,
+      );
+
+      await _repository.addActionItem(_currentSessionId!, actionItem);
+      debugPrint('Action item added successfully');
+    } catch (e) {
+      debugPrint('Error adding action item: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateActionItem(ActionItem actionItem) async {
+    if (_currentSessionId == null) {
+      debugPrint('No session selected');
+      throw Exception('No session selected');
+    }
+
+    try {
+      debugPrint('Updating action item ${actionItem.id}');
+      await _repository.updateActionItem(_currentSessionId!, actionItem);
+      debugPrint('Action item updated successfully');
+    } catch (e) {
+      debugPrint('Error updating action item: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteActionItem(String actionItemId) async {
+    if (_currentSessionId == null) {
+      debugPrint('No session selected');
+      throw Exception('No session selected');
+    }
+
+    try {
+      debugPrint('Deleting action item $actionItemId');
+      await _repository.deleteActionItem(_currentSessionId!, actionItemId);
+      debugPrint('Action item deleted successfully');
+    } catch (e) {
+      debugPrint('Error deleting action item: $e');
+      rethrow;
+    }
+  }
+
+  List<ActionItem> getActionItemsForGroup(String groupId) {
+    return _actionItems.where((item) => item.groupId == groupId).toList();
+  }
 }
+

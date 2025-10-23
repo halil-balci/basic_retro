@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/retro_session_model.dart';
 import '../models/retro_thought_model.dart';
 import '../models/thought_group_model.dart';
+import '../models/action_item_model.dart';
 import '../../domain/entities/retro_phase.dart';
 
 /// Firebase data source for retro feature
@@ -9,6 +10,7 @@ class FirebaseRetroDataSource {
   final FirebaseFirestore _firestore;
   final String _sessionsCollection = 'retro_sessions';
   final String _thoughtsCollection = 'thoughts';
+  final String _actionItemsCollection = 'action_items';
 
   FirebaseRetroDataSource(this._firestore);
 
@@ -344,4 +346,46 @@ class FirebaseRetroDataSource {
         .doc(sessionId)
         .update({'currentDiscussionGroupIndex': index});
   }
+
+  // Action items operations
+  Stream<List<ActionItemModel>> getSessionActionItems(String sessionId) {
+    return _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_actionItemsCollection)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ActionItemModel.fromJson(doc.data(), doc.id))
+            .toList());
+  }
+
+  Future<void> addActionItem(String sessionId, ActionItemModel actionItem) async {
+    final actionItemRef = _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_actionItemsCollection)
+        .doc();
+
+    final actionItemWithId = actionItem.copyWith(id: actionItemRef.id);
+    await actionItemRef.set(actionItemWithId.toJson());
+  }
+
+  Future<void> updateActionItem(String sessionId, ActionItemModel actionItem) async {
+    await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_actionItemsCollection)
+        .doc(actionItem.id)
+        .update(actionItem.toJson());
+  }
+
+  Future<void> deleteActionItem(String sessionId, String actionItemId) async {
+    await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .collection(_actionItemsCollection)
+        .doc(actionItemId)
+        .delete();
+  }
 }
+

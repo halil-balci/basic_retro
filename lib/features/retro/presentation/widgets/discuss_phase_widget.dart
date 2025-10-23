@@ -4,6 +4,7 @@ import '../../domain/entities/thought_group.dart';
 import '../../domain/entities/retro_thought.dart';
 import '../retro_view_model.dart';
 import 'finish_phase_widget.dart';
+import 'action_items_panel.dart';
 import '../../../../core/constants/retro_constants.dart';
 
 class DiscussPhaseWidget extends StatelessWidget {
@@ -188,13 +189,69 @@ class DiscussPhaseWidget extends StatelessWidget {
                   _buildNavigationBar(currentIndex, sortedGroups.length, viewModel, isSmallScreen, isVerySmallScreen),
                   SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
                   Expanded(
-                    child: _buildCurrentGroupDisplay(
-                      currentGroup, 
-                      currentIndex + 1, 
-                      sortedGroups.length, 
-                      isSmallScreen,
-                      isVerySmallScreen,
-                    ),
+                    child: isSmallScreen
+                      ? SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isVerySmallScreen ? 8 : 12,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildCurrentGroupDisplay(
+                                currentGroup, 
+                                currentIndex + 1, 
+                                sortedGroups.length, 
+                                isSmallScreen,
+                                isVerySmallScreen,
+                              ),
+                              SizedBox(height: isVerySmallScreen ? 12 : 16),
+                              const ActionItemsPanel(
+                                isSmallScreen: true,
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        )
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Ana içerik - sol taraf
+                                  Expanded(
+                                    flex: 2,
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          _buildCurrentGroupDisplay(
+                                            currentGroup, 
+                                            currentIndex + 1, 
+                                            sortedGroups.length, 
+                                            false,
+                                            false,
+                                          ),
+                                          const SizedBox(height: 20),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  // Action Items - sağ taraf (yükseklik sınırlı)
+                                  SizedBox(
+                                    width: 400,
+                                    height: constraints.maxHeight,
+                                    child: const ActionItemsPanel(
+                                      isSmallScreen: false,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                   ),
                 ] else
                   Expanded(
@@ -608,116 +665,109 @@ class DiscussPhaseWidget extends StatelessWidget {
               ),
             ),
             SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-            Expanded(
-              child: ListView.builder(
-                itemCount: thoughtsByCategory.entries.length,
-                itemBuilder: (context, categoryIndex) {
-                  final entry = thoughtsByCategory.entries.elementAt(categoryIndex);
-                  final categoryName = entry.key;
-                  final categoryThoughts = entry.value;
-                  
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Category header if more than one category
-                      if (thoughtsByCategory.length > 1) ...[
-                        Container(
-                          margin: EdgeInsets.only(
-                            bottom: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12), 
-                            vertical: isVerySmallScreen ? 4 : (isSmallScreen ? 6 : 8),
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getCategoryColor(categoryName).withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _getCategoryColor(categoryName).withOpacity(0.2),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getCategoryIcon(categoryName),
-                                color: _getCategoryColor(categoryName),
-                                size: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16),
-                              ),
-                              SizedBox(width: isVerySmallScreen ? 4 : (isSmallScreen ? 6 : 8)),
-                              Flexible(
-                                child: Text(
-                                  RetroConstants.categoryTitles[categoryName] ?? categoryName,
-                                  style: TextStyle(
-                                    fontSize: isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 14),
-                                    fontWeight: FontWeight.bold,
-                                    color: _getCategoryColor(categoryName),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
+            ...thoughtsByCategory.entries.map((entry) {
+              final categoryName = entry.key;
+              final categoryThoughts = entry.value;
+              final categoryIndex = thoughtsByCategory.keys.toList().indexOf(categoryName);
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category header if more than one category
+                  if (thoughtsByCategory.length > 1) ...[
+                    Container(
+                      margin: EdgeInsets.only(
+                        bottom: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12), 
+                        vertical: isVerySmallScreen ? 4 : (isSmallScreen ? 6 : 8),
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getCategoryColor(categoryName).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _getCategoryColor(categoryName).withOpacity(0.2),
                         ),
-                      ],
-                      // Show all thoughts from this category
-                      ...categoryThoughts.asMap().entries.map((thoughtEntry) {
-                        final thought = thoughtEntry.value;
-                        
-                        return Container(
-                          margin: EdgeInsets.only(
-                            bottom: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getCategoryIcon(categoryName),
+                            color: _getCategoryColor(categoryName),
+                            size: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16),
                           ),
-                          padding: EdgeInsets.all(isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _getCategoryColor(categoryName).withOpacity(0.2),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+                          SizedBox(width: isVerySmallScreen ? 4 : (isSmallScreen ? 6 : 8)),
+                          Flexible(
+                            child: Text(
+                              RetroConstants.categoryTitles[categoryName] ?? categoryName,
+                              style: TextStyle(
+                                fontSize: isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 14),
+                                fontWeight: FontWeight.bold,
+                                color: _getCategoryColor(categoryName),
                               ),
-                            ],
-                          ),
-                          child: IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Container(
-                                  width: isVerySmallScreen ? 2 : (isSmallScreen ? 3 : 4),
-                                  decoration: BoxDecoration(
-                                    color: _getCategoryColor(categoryName),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                SizedBox(width: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12)),
-                                Expanded(
-                                  child: SelectableText(
-                                    thought.content,
-                                    style: TextStyle(
-                                      fontSize: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16),
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF374151),
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        );
-                      }),
-                      if (thoughtsByCategory.length > 1 && categoryIndex < thoughtsByCategory.length - 1) 
-                        SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
-                    ],
-                  );
-                },
-              ),
-            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Show all thoughts from this category
+                  ...categoryThoughts.map((thought) {
+                    return Container(
+                      margin: EdgeInsets.only(
+                        bottom: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12),
+                      ),
+                      padding: EdgeInsets.all(isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _getCategoryColor(categoryName).withOpacity(0.2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              width: isVerySmallScreen ? 2 : (isSmallScreen ? 3 : 4),
+                              decoration: BoxDecoration(
+                                color: _getCategoryColor(categoryName),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            SizedBox(width: isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 12)),
+                            Expanded(
+                              child: SelectableText(
+                                thought.content,
+                                style: TextStyle(
+                                  fontSize: isVerySmallScreen ? 12 : (isSmallScreen ? 14 : 16),
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF374151),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  if (thoughtsByCategory.length > 1 && categoryIndex < thoughtsByCategory.length - 1) 
+                    SizedBox(height: isVerySmallScreen ? 8 : (isSmallScreen ? 12 : 16)),
+                ],
+              );
+            }),
           ],
         ),
       ),

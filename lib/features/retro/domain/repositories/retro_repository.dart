@@ -2,6 +2,7 @@ import '../entities/retro_thought.dart';
 import '../entities/retro_session.dart';
 import '../entities/retro_phase.dart';
 import '../entities/thought_group.dart';
+import '../entities/action_item.dart';
 
 /// Domain repository interface for retro feature
 abstract class RetroRepository {
@@ -41,4 +42,11 @@ abstract class RetroRepository {
   
   // Discussion management
   Future<void> updateDiscussionGroupIndex(String sessionId, int index);
+  
+  // Action items management
+  Stream<List<ActionItem>> getSessionActionItems(String sessionId);
+  Future<void> addActionItem(String sessionId, ActionItem actionItem);
+  Future<void> updateActionItem(String sessionId, ActionItem actionItem);
+  Future<void> deleteActionItem(String sessionId, String actionItemId);
 }
+
