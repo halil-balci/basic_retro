@@ -47,6 +47,9 @@ app.*.map.json
 # Firebase configuration (contains sensitive data)
 lib/firebase_options.dart
 
+# Environment variables (contains API keys and secrets)
+.env
+
 # Firebase cache and hosting files
 .firebase/
 firebase-debug.log

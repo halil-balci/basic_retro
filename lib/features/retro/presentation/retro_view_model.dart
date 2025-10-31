@@ -5,11 +5,14 @@ import '../domain/entities/retro_phase.dart';
 import '../domain/entities/thought_group.dart';
 import '../domain/entities/action_item.dart';
 import '../domain/repositories/retro_repository.dart';
+import '../domain/usecases/generate_action_item_usecase.dart';
 import '../../../core/constants/retro_constants.dart';
 import '../../../core/services/web_session_service.dart';
+import '../../../core/di/injection.dart';
 
 class RetroViewModel extends ChangeNotifier {
   final RetroRepository _repository;
+  late final GenerateActionItemUseCase _generateActionItemUseCase;
   late final String _currentUserId;
   late final String _currentUserName;
   
@@ -35,6 +38,12 @@ class RetroViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  bool _isGeneratingActionItem = false;
+  bool get isGeneratingActionItem => _isGeneratingActionItem;
+
+  String? _generatedActionItem;
+  String? get generatedActionItem => _generatedActionItem;
+
   RetroViewModel(this._repository) {
     // Initialize user info from storage or create new
     _initializeUserInfo();
@@ -42,6 +51,9 @@ class RetroViewModel extends ChangeNotifier {
     
     // Setup web session management
     _setupWebSessionManagement();
+    
+    // Initialize use case
+    _generateActionItemUseCase = getIt<GenerateActionItemUseCase>();
   }
 
   List<RetroThought> get thoughts {
@@ -800,6 +812,77 @@ class RetroViewModel extends ChangeNotifier {
 
   List<ActionItem> getActionItemsForGroup(String groupId) {
     return _actionItems.where((item) => item.groupId == groupId).toList();
+  }
+
+  /// Generate action item from current discussion group thoughts using Gemini AI
+  Future<void> generateActionItemFromCurrentGroup() async {
+    if (_currentSession == null) {
+      throw Exception('No session selected');
+    }
+
+    final currentGroup = _currentSession!.currentDiscussionGroup;
+    if (currentGroup == null) {
+      throw Exception('No group currently being discussed');
+    }
+
+    _isGeneratingActionItem = true;
+    _generatedActionItem = null;
+    notifyListeners();
+
+    try {
+      // Extract thought texts from the current group
+      final thoughtTexts = currentGroup.thoughts
+          .map((thought) => thought.content)
+          .toList();
+
+      if (thoughtTexts.isEmpty) {
+        throw Exception('No thoughts available in current group');
+      }
+
+      // Call use case
+      final result = await _generateActionItemUseCase(
+        GenerateActionItemParams(thoughtTexts: thoughtTexts),
+      );
+
+      result.fold(
+        (failure) {
+          debugPrint('Failed to generate action item: ${failure.message}');
+          throw Exception(failure.message);
+        },
+        (generatedText) {
+          // Clean up markdown artifacts and formatting from Gemini response
+          String cleanedText = generatedText.trim();
+          
+          // Remove leading/trailing ** (Gemini markdown formatting artifact)
+          if (cleanedText.startsWith('**') && cleanedText.endsWith('**')) {
+            cleanedText = cleanedText.substring(2, cleanedText.length - 2).trim();
+          }
+          
+          // Remove leading/trailing quotes if present
+          if (cleanedText.startsWith('"') && cleanedText.endsWith('"')) {
+            cleanedText = cleanedText.substring(1, cleanedText.length - 1).trim();
+          }
+          
+          // Remove any other markdown bold markers that might be in the middle
+          cleanedText = cleanedText.replaceAll('**', '');
+          
+          _generatedActionItem = cleanedText;
+          debugPrint('Action item generated successfully: $cleanedText');
+        },
+      );
+    } catch (e) {
+      debugPrint('Error generating action item: $e');
+      rethrow;
+    } finally {
+      _isGeneratingActionItem = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clear generated action item
+  void clearGeneratedActionItem() {
+    _generatedActionItem = null;
+    notifyListeners();
   }
 }
 

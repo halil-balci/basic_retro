@@ -23,6 +23,7 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _assigneeController = TextEditingController();
   bool _isAdding = false;
+  DateTime? _lastAIRequestTime;
 
   @override
   void initState() {
@@ -225,6 +226,40 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
                                 ),
                               ),
                               SizedBox(height: widget.isSmallScreen ? 8 : 10),
+                              // AI Generate Button
+                              OutlinedButton.icon(
+                                onPressed: viewModel.isGeneratingActionItem || _isAdding
+                                    ? null
+                                    : () => _showAIGenerateDialog(context, viewModel),
+                                icon: viewModel.isGeneratingActionItem
+                                    ? SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            const Color(0xFF6366F1),
+                                          ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.auto_awesome,
+                                        size: widget.isSmallScreen ? 16 : 18,
+                                      ),
+                                label: Text(
+                                  'Generate with AI',
+                                  style: TextStyle(fontSize: widget.isSmallScreen ? 12 : 14),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF6366F1),
+                                  side: const BorderSide(color: Color(0xFF6366F1)),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: widget.isSmallScreen ? 12 : 16,
+                                    vertical: widget.isSmallScreen ? 8 : 12,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: widget.isSmallScreen ? 8 : 10),
                               ElevatedButton.icon(
                                 onPressed: _isAdding ? null : () => _addActionItem(viewModel),
                                 icon: _isAdding
@@ -320,6 +355,179 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
         });
       }
     }
+  }
+
+  Future<void> _showAIGenerateDialog(BuildContext context, RetroViewModel viewModel) async {
+    // Check cooldown (minimum 5 seconds between requests)
+    if (_lastAIRequestTime != null) {
+      final timeSinceLastRequest = DateTime.now().difference(_lastAIRequestTime!);
+      if (timeSinceLastRequest.inSeconds < 5) {
+        final remainingSeconds = 5 - timeSinceLastRequest.inSeconds;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please wait $remainingSeconds more second(s) before generating again.'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
+    _lastAIRequestTime = DateTime.now();
+
+    try {
+      // Generate action item
+      await viewModel.generateActionItemFromCurrentGroup();
+
+      if (!mounted) return;
+
+      // Show dialog with result
+      if (viewModel.generatedActionItem != null) {
+        _showGeneratedActionItemDialog(context, viewModel);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error generating action item: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _showGeneratedActionItemDialog(BuildContext context, RetroViewModel viewModel) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 500, // Maksimum genişlik sınırı
+            minWidth: 300,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome,
+                        color: Color(0xFF6366F1),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'AI Generated Action Item',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                // Content
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF6366F1).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    viewModel.generatedActionItem ?? '',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.6,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        viewModel.clearGeneratedActionItem();
+                        Navigator.of(dialogContext).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Set to input field
+                        _contentController.text = viewModel.generatedActionItem ?? '';
+                        viewModel.clearGeneratedActionItem();
+                        Navigator.of(dialogContext).pop();
+                        
+                        // Show success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Action item added to input field'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check, size: 18),
+                      label: const Text(
+                        'Use This',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _exportActionItems(RetroViewModel viewModel) {
