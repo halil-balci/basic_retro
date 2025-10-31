@@ -1,222 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/entities/retro_thought.dart';
-import '../../domain/entities/thought_group.dart';
 import '../retro_view_model.dart';
 import '../../../../core/constants/retro_constants.dart';
+import '../../../../core/presentation/widgets/common/category_column.dart';
+import '../../../../core/presentation/widgets/common/votable_group_card.dart';
+import '../../../../core/presentation/widgets/base_phase_widget.dart';
 
-class VotingPhaseWidget extends StatelessWidget {
+class VotingPhaseWidget extends BasePhaseWidget {
   const VotingPhaseWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  String get phaseTitle => 'Voting Phase';
+
+  @override
+  String get phaseDescription => 'Vote for the thoughts that matter most to you';
+
+  @override
+  IconData get phaseIcon => Icons.how_to_vote;
+
+  @override
+  List<Color> get phaseGradientColors => const [Color(0xFF9333EA), Color(0xFF7C3AED)];
+
+  @override
+  String? getAdditionalInfo(BuildContext context) {
+    final viewModel = Provider.of<RetroViewModel>(context, listen: false);
+    return 'You have ${viewModel.getUserRemainingVotes()} votes remaining';
+  }
+
+  @override
+  Widget buildPhaseContent(BuildContext context, bool isSmallScreen) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isSmallScreen = constraints.maxWidth < 600;
-            
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
-              child: Column(
-                children: [
-                  // Header card similar to editing phase
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF9333EA), Color(0xFF7C3AED)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.how_to_vote,
-                                color: Colors.white,
-                                size: isSmallScreen ? 20 : 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Voting Phase',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isSmallScreen ? 16 : 18,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 2 : 4),
-                                  Text(
-                                    'You have ${viewModel.getUserRemainingVotes()} votes remaining.',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isSmallScreen ? 13 : 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Click on thoughts to vote.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Responsive layout - vertical on small screens, horizontal on large screens
-                  isSmallScreen
-                    ? Column(
-                        children: RetroConstants.categories.map((category) {
-                          Color categoryColor;
-                          switch (RetroConstants.categoryColors[category]) {
-                            case 'green':
-                              categoryColor = const Color(0xFF10B981);
-                              break;
-                            case 'red':
-                              categoryColor = const Color(0xFFEF4444);
-                              break;
-                            case 'blue':
-                              categoryColor = const Color(0xFF3B82F6);
-                              break;
-                            default:
-                              categoryColor = const Color(0xFF6B7280);
-                          }
-                          
-                          return Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(
-                              bottom: category != RetroConstants.categories.last ? 16 : 0,
-                            ),
-                            child: _buildVotingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
-                          );
-                        }).toList(),
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: RetroConstants.categories.map((category) {
-                          Color categoryColor;
-                          switch (RetroConstants.categoryColors[category]) {
-                            case 'green':
-                              categoryColor = const Color(0xFF10B981);
-                              break;
-                            case 'red':
-                              categoryColor = const Color(0xFFEF4444);
-                              break;
-                            case 'blue':
-                              categoryColor = const Color(0xFF3B82F6);
-                              break;
-                            default:
-                              categoryColor = const Color(0xFF6B7280);
-                          }
-                          
-                          return Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(
-                                right: category != RetroConstants.categories.last ? 16 : 0,
-                              ),
-                              child: _buildVotingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                ],
-              ),
-            );
-          },
-        );
+        return _buildCategoriesLayout(viewModel, isSmallScreen);
       },
     );
   }
 
-  Widget _buildVotingCategoryColumn(String category, Color color, RetroViewModel viewModel, bool isSmallScreen) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header
-          Container(
-            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  _getCategoryIcon(category),
-                  color: color,
-                  size: isSmallScreen ? 20 : 24,
+  Widget _buildCategoriesLayout(RetroViewModel viewModel, bool isSmall) {
+    final categories = RetroConstants.categories.map((category) {
+      final colorName = RetroConstants.categoryColors[category] ?? 'grey';
+      final color = _getColorFromName(colorName);
+      return MapEntry(category, color);
+    }).toList();
+
+    return isSmall
+        ? Column(
+            children: categories.map((entry) {
+              return Container(
+                width: double.infinity,
+                margin: EdgeInsets.only(
+                  bottom: entry.key != categories.last.key ? 16 : 0,
                 ),
-                SizedBox(height: isSmallScreen ? 6 : 8),
-                Text(
-                  RetroConstants.categoryTitles[category] ?? category,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                child: _buildVotingCategoryColumn(entry.key, entry.value, viewModel, isSmall),
+              );
+            }).toList(),
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: categories.map((entry) {
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    right: entry.key != categories.last.key ? 16 : 0,
                   ),
-                  textAlign: TextAlign.center,
+                  child: _buildVotingCategoryColumn(entry.key, entry.value, viewModel, isSmall),
                 ),
-              ],
-            ),
-          ),
-          // Thoughts list for voting
-          Padding(
-            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-            child: Column(
-              children: _buildVotableThoughtsList(category, viewModel),
-            ),
-          ),
-        ],
-      ),
-    );
+              );
+            }).toList(),
+          );
   }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Start':
-        return Icons.lightbulb_rounded;
-      case 'Stop':
-        return Icons.thumb_down_rounded;
-      case 'Continue':
-        return Icons.thumb_up_rounded;
+  Color _getColorFromName(String colorName) {
+    switch (colorName) {
+      case 'green':
+        return const Color(0xFF10B981);
+      case 'red':
+        return const Color(0xFFEF4444);
+      case 'blue':
+        return const Color(0xFF3B82F6);
       default:
-        return Icons.note_rounded;
+        return const Color(0xFF6B7280);
     }
+  }
+
+  Widget _buildVotingCategoryColumn(String category, Color color, RetroViewModel viewModel, bool isSmallScreen) {
+    return CategoryColumn(
+      category: category,
+      color: color,
+      child: Padding(
+        padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+        child: Column(
+          children: _buildVotableThoughtsList(category, viewModel),
+        ),
+      ),
+    );
   }
 
   List<Widget> _buildVotableThoughtsList(String category, RetroViewModel viewModel) {
@@ -248,7 +126,7 @@ class VotingPhaseWidget extends StatelessWidget {
     for (final group in groupsForCategory) {
       widgets.add(Container(
         margin: const EdgeInsets.only(bottom: 8),
-        child: _VotableGroupCard(
+        child: VotableGroupCard(
           group: group,
           viewModel: viewModel,
           category: category,
@@ -412,214 +290,6 @@ class _VotableThoughtCard extends StatelessWidget {
       if (groupsWithThought.isNotEmpty) {
         await viewModel.removeVoteFromGroup(groupsWithThought.first.id);
       }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error removing vote: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-}
-
-class _VotableGroupCard extends StatelessWidget {
-  final ThoughtGroup group;
-  final RetroViewModel viewModel;
-  final String category;
-
-  const _VotableGroupCard({
-    required this.group,
-    required this.viewModel,
-    required this.category,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasUserVoted = group.hasUserVoted(viewModel.getCurrentUserId());
-    final userVoteCount = group.getUserVoteCount(viewModel.getCurrentUserId());
-    
-    // Group thoughts by category for better display
-    final thoughtsByCategory = <String, List<RetroThought>>{};
-    for (final thought in group.thoughts) {
-      thoughtsByCategory.putIfAbsent(thought.category, () => []).add(thought);
-    }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 4,
-      child: InkWell(
-        onTap: () => _handleGroupTap(context, group, viewModel),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          constraints: const BoxConstraints(
-            maxHeight: 200, // Maximum height to prevent overflow
-          ),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: hasUserVoted ? Colors.green.shade50 : Colors.amber.shade50,
-            border: hasUserVoted 
-                ? Border.all(color: Colors.green, width: 2)
-                : Border.all(color: Colors.amber, width: 2),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-              // Group header
-              Row(
-                children: [
-                  Icon(Icons.group_work, color: Colors.amber.shade700, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Group (${group.thoughts.length} items)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade700,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  // Show user's own vote and remove option
-                  if (hasUserVoted) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '$userVoteCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () => _handleGroupRemoveVote(context, group, viewModel),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade100,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Icon(
-                          Icons.remove_circle,
-                          size: 16,
-                          color: Colors.red.shade700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Show thoughts by category
-              ...thoughtsByCategory.entries.map((entry) {
-                final categoryName = entry.key;
-                final categoryThoughts = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Category header if more than one category
-                      if (thoughtsByCategory.length > 1) ...[
-                        Text(
-                          '$categoryName:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                      ],
-                      // Show thoughts from this category (max 2 per category)
-                      ...categoryThoughts.take(2).map((thought) => Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 4, 
-                          left: thoughtsByCategory.length > 1 ? 12 : 0
-                        ),
-                        child: Text(
-                          thought.content,
-                          style: const TextStyle(fontSize: 11),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
-                      if (categoryThoughts.length > 2)
-                        Padding(
-                          padding: EdgeInsets.only(left: thoughtsByCategory.length > 1 ? 12 : 0),
-                          child: Text(
-                            '+${categoryThoughts.length - 2} more...',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ],
-          ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleGroupTap(BuildContext context, ThoughtGroup group, RetroViewModel viewModel) async {
-    final remainingVotes = viewModel.getUserRemainingVotes();
-    
-    if (remainingVotes <= 0) {
-      return;
-    }
-
-    try {
-      await viewModel.voteForGroup(group.id);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error voting: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _handleGroupRemoveVote(BuildContext context, ThoughtGroup group, RetroViewModel viewModel) async {
-    try {
-      await viewModel.removeVoteFromGroup(group.id);
-    
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

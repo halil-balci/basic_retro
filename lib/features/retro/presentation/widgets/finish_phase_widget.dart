@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import '../../../../services/feedback_service.dart';
 import '../../../../services/action_item_export_service.dart';
 import '../retro_view_model.dart';
+import '../../../../core/presentation/mixins/responsive_mixin.dart';
 
-class FinishPhaseWidget extends StatefulWidget {
+class FinishPhaseWidget extends StatefulWidget with ResponsiveMixin {
   const FinishPhaseWidget({super.key});
 
   @override
@@ -114,7 +115,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.2),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -126,7 +127,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(50),
             ),
             child: const Icon(
@@ -150,7 +151,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
           Text(
             'You have successfully completed all phases.',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 16,
               fontWeight: FontWeight.w500,
               height: 1.4,
@@ -169,12 +170,12 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF6366F1).withOpacity(0.1),
+          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -227,7 +228,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -239,7 +240,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(50),
             ),
             child: const Icon(
@@ -285,7 +286,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -300,7 +301,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -401,7 +402,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withOpacity(0.1),
+                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(50),
                               ),
                               child: const Icon(
@@ -480,7 +481,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF6366F1).withOpacity(0.2),
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -491,7 +492,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                             Container(
                               padding: EdgeInsets.all(isVerySmallScreen ? 12 : 16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(50),
                               ),
                               child: Icon(
@@ -515,7 +516,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                             Text(
                               'You have successfully completed all phases.',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: isVerySmallScreen ? 14 : (isSmallScreen ? 16 : 18),
                                 fontWeight: FontWeight.w500,
                                 height: 1.4,
@@ -535,12 +536,12 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFF6366F1).withOpacity(0.1),
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -599,7 +600,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -614,7 +615,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                                     Container(
                                       padding: EdgeInsets.all(isVerySmallScreen ? 6 : 8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Icon(
@@ -709,7 +710,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
                                 Container(
                                   padding: EdgeInsets.all(isVerySmallScreen ? 12 : 16),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981).withOpacity(0.1),
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(50),
                                   ),
                                   child: Icon(
@@ -767,7 +768,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -781,7 +782,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
               Container(
                 padding: EdgeInsets.all(isVerySmallScreen ? 6 : 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -849,7 +850,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -864,7 +865,7 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -921,9 +922,9 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -963,3 +964,4 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
     }
   }
 }
+

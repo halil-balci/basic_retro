@@ -3,15 +3,28 @@ import 'package:provider/provider.dart';
 import '../../domain/entities/retro_thought.dart';
 import '../retro_view_model.dart';
 import '../../../../core/constants/retro_constants.dart';
+import '../../../../core/presentation/widgets/base_stateful_phase_widget.dart';
 
-class GroupingPhaseWidget extends StatefulWidget {
+class GroupingPhaseWidget extends BaseStatefulPhaseWidget {
   const GroupingPhaseWidget({super.key});
 
   @override
-  State<GroupingPhaseWidget> createState() => _GroupingPhaseWidgetState();
+  String get phaseTitle => 'Grouping Phase';
+
+  @override
+  String get phaseDescription => 'Drag and drop thoughts to create groups. Similar thoughts work better together!';
+
+  @override
+  IconData get phaseIcon => Icons.workspaces;
+
+  @override
+  List<Color> get phaseGradientColors => const [Color(0xFF4F46E5), Color(0xFF3730A3)];
+
+  @override
+  BaseStatefulPhaseState<GroupingPhaseWidget> createState() => _GroupingPhaseWidgetState();
 }
 
-class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
+class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidget> {
   // Map to track groups - each group has an ID and list of thoughts
   Map<String, List<RetroThought>> _thoughtGroups = {};
   // Map to track which group each thought belongs to
@@ -19,147 +32,46 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
   int _nextGroupId = 1;
 
   @override
-  Widget build(BuildContext context) {
+  String? getAdditionalInfo(BuildContext context) {
+    return '${_thoughtGroups.length} groups created';
+  }
+
+  @override
+  Widget buildPhaseContent(BuildContext context, bool isSmallScreen) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isSmallScreen = constraints.maxWidth < 600;
-            
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
-              child: Column(
-                children: [
-                  // Header card similar to editing phase
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF4F46E5), Color(0xFF3730A3)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.group_work,
-                                color: Colors.white,
-                                size: isSmallScreen ? 20 : 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Grouping Phase',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isSmallScreen ? 16 : 18,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 2 : 4),
-                                  Text(
-                                    '${_thoughtGroups.length} groups created.',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: isSmallScreen ? 13 : 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Drag thoughts on top of each other to create groups.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+        // Responsive layout - vertical on small screens, horizontal on large screens
+        return isSmallScreen
+          ? Column(
+              children: RetroConstants.categories.map((category) {
+                final colorName = RetroConstants.categoryColors[category] ?? 'grey';
+                final categoryColor = _getColorFromName(colorName);
+                
+                return Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.only(
+                    bottom: category != RetroConstants.categories.last ? 16 : 0,
                   ),
-                  const SizedBox(height: 24),
-                  // Responsive layout - vertical on small screens, horizontal on large screens
-                  isSmallScreen
-                    ? Column(
-                        children: RetroConstants.categories.map((category) {
-                          Color categoryColor;
-                          switch (RetroConstants.categoryColors[category]) {
-                            case 'green':
-                              categoryColor = const Color(0xFF10B981);
-                              break;
-                            case 'red':
-                              categoryColor = const Color(0xFFEF4444);
-                              break;
-                            case 'blue':
-                              categoryColor = const Color(0xFF3B82F6);
-                              break;
-                            default:
-                              categoryColor = const Color(0xFF6B7280);
-                          }
-                          
-                          return Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(
-                              bottom: category != RetroConstants.categories.last ? 16 : 0,
-                            ),
-                            child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
-                          );
-                        }).toList(),
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: RetroConstants.categories.map((category) {
-                          Color categoryColor;
-                          switch (RetroConstants.categoryColors[category]) {
-                            case 'green':
-                              categoryColor = const Color(0xFF10B981);
-                              break;
-                            case 'red':
-                              categoryColor = const Color(0xFFEF4444);
-                              break;
-                            case 'blue':
-                              categoryColor = const Color(0xFF3B82F6);
-                              break;
-                            default:
-                              categoryColor = const Color(0xFF6B7280);
-                          }
-                          
-                          return Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(
-                                right: category != RetroConstants.categories.last ? 16 : 0,
-                              ),
-                              child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                ],
-              ),
+                  child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
+                );
+              }).toList(),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: RetroConstants.categories.map((category) {
+                final colorName = RetroConstants.categoryColors[category] ?? 'grey';
+                final categoryColor = _getColorFromName(colorName);
+                
+                return Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(
+                      right: category != RetroConstants.categories.last ? 16 : 0,
+                    ),
+                    child: _buildGroupingCategoryColumn(category, categoryColor, viewModel, isSmallScreen),
+                  ),
+                );
+              }).toList(),
             );
-          },
-        );
       },
     );
   }
@@ -174,7 +86,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 2),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,7 +96,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
           Container(
             padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(10),
                 topRight: Radius.circular(10),
@@ -229,7 +141,7 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
                 padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                 decoration: BoxDecoration(
                   color: isHighlighted 
-                      ? color.withOpacity(0.1) 
+                      ? color.withValues(alpha: 0.1) 
                       : Colors.transparent,
                   border: isHighlighted
                       ? Border.all(color: color, width: 2)
@@ -454,6 +366,20 @@ class _GroupingPhaseWidgetState extends State<GroupingPhaseWidget> {
     // This would update the thought's category in the real implementation
     debugPrint('Moved "${thought.content}" to $newCategory');
   }
+
+  /// Helper method to convert color name string to Color object
+  Color _getColorFromName(String colorName) {
+    switch (colorName.toLowerCase()) {
+      case 'green':
+        return const Color(0xFF10B981);
+      case 'red':
+        return const Color(0xFFEF4444);
+      case 'blue':
+        return const Color(0xFF3B82F6);
+      default:
+        return const Color(0xFF6B7280); // Grey as default
+    }
+  }
 }
 
 class _DraggableThoughtCard extends StatelessWidget {
@@ -491,7 +417,7 @@ class _DraggableThoughtCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -637,3 +563,4 @@ class _GroupCard extends StatelessWidget {
     );
   }
 }
+
