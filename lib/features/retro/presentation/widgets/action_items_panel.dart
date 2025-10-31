@@ -331,10 +331,8 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
 
     try {
       final assignee = _assigneeController.text.trim();
-      // Discuss aşaması için genel action items (groupId: "discuss-phase")
       await viewModel.addActionItem(
         content,
-        'discuss-phase',
         assignee: assignee.isNotEmpty ? assignee : null,
       );
       _contentController.clear();

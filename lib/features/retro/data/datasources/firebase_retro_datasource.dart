@@ -353,6 +353,7 @@ class FirebaseRetroDataSource {
         .collection(_sessionsCollection)
         .doc(sessionId)
         .collection(_actionItemsCollection)
+        .orderBy('createdAt', descending: false) // Order by creation time, oldest first
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ActionItemModel.fromJson(doc.data(), doc.id))

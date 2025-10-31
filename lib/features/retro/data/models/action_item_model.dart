@@ -3,24 +3,24 @@ import '../../domain/entities/action_item.dart';
 /// Data model for ActionItem
 class ActionItemModel {
   final String id;
-  final String groupId;
   final String content;
   final String? assignee;
+  final DateTime createdAt;
 
   const ActionItemModel({
     required this.id,
-    required this.groupId,
     required this.content,
     this.assignee,
+    required this.createdAt,
   });
 
   /// Convert model to entity
   ActionItem toEntity() {
     return ActionItem(
       id: id,
-      groupId: groupId,
       content: content,
       assignee: assignee,
+      createdAt: createdAt,
     );
   }
 
@@ -28,18 +28,18 @@ class ActionItemModel {
   factory ActionItemModel.fromEntity(ActionItem entity) {
     return ActionItemModel(
       id: entity.id,
-      groupId: entity.groupId,
       content: entity.content,
       assignee: entity.assignee,
+      createdAt: entity.createdAt,
     );
   }
 
   /// Convert to JSON for Firebase
   Map<String, dynamic> toJson() {
     return {
-      'groupId': groupId,
       'content': content,
       'assignee': assignee,
+      'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
 
@@ -47,23 +47,25 @@ class ActionItemModel {
   factory ActionItemModel.fromJson(Map<String, dynamic> json, String id) {
     return ActionItemModel(
       id: id,
-      groupId: json['groupId'] as String? ?? '',
       content: json['content'] as String? ?? '',
       assignee: json['assignee'] as String?,
+      createdAt: json['createdAt'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
+          : DateTime.now(),
     );
   }
 
   ActionItemModel copyWith({
     String? id,
-    String? groupId,
     String? content,
     String? assignee,
+    DateTime? createdAt,
   }) {
     return ActionItemModel(
       id: id ?? this.id,
-      groupId: groupId ?? this.groupId,
       content: content ?? this.content,
       assignee: assignee ?? this.assignee,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

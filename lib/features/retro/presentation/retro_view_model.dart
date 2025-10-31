@@ -751,7 +751,7 @@ class RetroViewModel extends ChangeNotifier {
   }
 
   // Action items management
-  Future<void> addActionItem(String content, String groupId, {String? assignee}) async {
+  Future<void> addActionItem(String content, {String? assignee}) async {
     if (_currentSessionId == null) {
       debugPrint('No session selected');
       throw Exception('No session selected');
@@ -765,9 +765,9 @@ class RetroViewModel extends ChangeNotifier {
       debugPrint('Adding action item to session: $_currentSessionId');
       final actionItem = ActionItem(
         id: '', // Will be set by Firebase
-        groupId: groupId,
         content: content.trim(),
         assignee: assignee,
+        createdAt: DateTime.now(),
       );
 
       await _repository.addActionItem(_currentSessionId!, actionItem);
@@ -808,10 +808,6 @@ class RetroViewModel extends ChangeNotifier {
       debugPrint('Error deleting action item: $e');
       rethrow;
     }
-  }
-
-  List<ActionItem> getActionItemsForGroup(String groupId) {
-    return _actionItems.where((item) => item.groupId == groupId).toList();
   }
 
   /// Generate action item from current discussion group thoughts using Gemini AI
