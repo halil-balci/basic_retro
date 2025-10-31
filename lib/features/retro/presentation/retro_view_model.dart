@@ -75,7 +75,10 @@ class RetroViewModel extends ChangeNotifier {
   void _handleWebPageUnload() {
     debugPrint('Web page unload detected - leaving session');
     if (_currentSessionId != null) {
-      // Leave session immediately without waiting
+      // Send beacon for immediate cleanup
+      WebSessionService.sendBeaconLeaveSession();
+      
+      // Also try normal leave (may not complete due to page unload)
       leaveSession();
     }
   }
@@ -471,9 +474,9 @@ class RetroViewModel extends ChangeNotifier {
         await _createInitialGroups();
       }
       
-      // If advancing to finish phase, clear all session data
+      // If advancing to finish phase, delete the entire session
       if (nextPhase == RetroPhase.finish) {
-        await _clearSessionDataOnFinish();
+        await _deleteSessionOnFinish();
       }
       
     } catch (e) {
@@ -482,20 +485,23 @@ class RetroViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _clearSessionDataOnFinish() async {
+  Future<void> _deleteSessionOnFinish() async {
     if (_currentSessionId == null) return;
     
     try {
-      debugPrint('Caching action items before clearing session data...');
-      // Cache current action items before clearing
+      debugPrint('Caching action items before deleting session...');
+      // Cache current action items before deleting
       _cachedActionItems = List.from(_actionItems);
       debugPrint('Cached ${_cachedActionItems.length} action items');
       
-      debugPrint('Clearing session data on finish phase...');
+      debugPrint('Deleting entire session on finish phase...');
       await _repository.clearSessionData(_currentSessionId!);
-      debugPrint('Session data cleared successfully');
+      debugPrint('Session deleted successfully');
+      
+      // Clear local session data
+      _currentSessionId = null;
     } catch (e) {
-      debugPrint('Error clearing session data: $e');
+      debugPrint('Error deleting session: $e');
       rethrow;
     }
   }

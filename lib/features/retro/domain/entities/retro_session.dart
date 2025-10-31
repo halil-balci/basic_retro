@@ -147,6 +147,6 @@ class RetroSession {
   }
 
   int getUserRemainingVotes(String userId) {
-    return userVotes[userId] ?? 3; // Default 3 votes per user
+    return userVotes[userId] ?? RetroConstants.maxVotesPerUser; // Default votes per user from constants
   }
 }

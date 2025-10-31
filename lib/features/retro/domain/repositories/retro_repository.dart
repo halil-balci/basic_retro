@@ -49,7 +49,7 @@ abstract class RetroRepository {
   Future<void> updateActionItem(String sessionId, ActionItem actionItem);
   Future<void> deleteActionItem(String sessionId, String actionItemId);
   
-  // Session data cleanup
+  // Session deletion - Deletes entire session including all subcollections
   Future<void> clearSessionData(String sessionId);
 }
 

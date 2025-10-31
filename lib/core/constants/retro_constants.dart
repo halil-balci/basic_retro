@@ -7,7 +7,7 @@ class RetroConstants {
   ];
   
   // Voting configuration
-  static const int maxVotesPerUser = 6; // Her kullanıcı maksimum 6 oy kullanabilir
+  static const int maxVotesPerUser = 4; // Her kullanıcı maksimum 4 oy kullanabilir
   
   // Kategori başlıkları
   static Map<String, String> categoryTitles = {

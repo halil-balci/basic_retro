@@ -392,7 +392,7 @@ class FirebaseRetroDataSource {
   Future<void> clearSessionData(String sessionId) async {
     final batch = _firestore.batch();
     
-    // Clear thoughts subcollection
+    // Delete thoughts subcollection
     final thoughtsSnapshot = await _firestore
         .collection(_sessionsCollection)
         .doc(sessionId)
@@ -403,7 +403,7 @@ class FirebaseRetroDataSource {
       batch.delete(doc.reference);
     }
     
-    // Clear action items subcollection
+    // Delete action items subcollection
     final actionItemsSnapshot = await _firestore
         .collection(_sessionsCollection)
         .doc(sessionId)
@@ -414,13 +414,9 @@ class FirebaseRetroDataSource {
       batch.delete(doc.reference);
     }
     
-    // Clear session-level data (groups, votes, discussion index)
+    // Delete the session document completely
     final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
-    batch.update(sessionRef, {
-      'groups': [],
-      'userVotes': {},
-      'currentDiscussionGroupIndex': 0,
-    });
+    batch.delete(sessionRef);
     
     await batch.commit();
   }

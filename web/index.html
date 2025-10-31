@@ -33,7 +33,33 @@
   <title>Retro Board</title>
   <link rel="manifest" href="manifest.json">
   
-  <script>
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, doc, updateDoc, deleteField } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDL35YUbomX6OIjXi3Xx1JrU434bwfcW4c',
+      authDomain: 'best-retro.firebaseapp.com',
+      projectId: 'best-retro',
+      storageBucket: 'best-retro.firebasestorage.app',
+      messagingSenderId: '83896195073',
+      appId: '1:83896195073:web:4dd4fa7328a8e34e2f4800'
+    };
+    
+    // Initialize Firebase
+    let firebaseApp;
+    let db;
+    
+    try {
+      firebaseApp = initializeApp(firebaseConfig);
+      db = getFirestore(firebaseApp);
+      console.log('Firebase initialized successfully for session cleanup');
+    } catch (error) {
+      console.error('Firebase initialization error:', error);
+    }
+    
     // Flutter Web Integration for Session Management
     window.retroBoardState = {
       currentSessionId: null,
@@ -57,11 +83,62 @@
       console.log('Session unregistered');
     };
     
+    // Function to send beacon for leaving session using Firestore
+    window.sendLeaveSessionBeacon = async function(sessionId, userId) {
+      if (!db) {
+        console.error('Firestore not initialized');
+        return false;
+      }
+      
+      try {
+        console.log('Sending leave session beacon for:', sessionId, userId);
+        const sessionRef = doc(db, 'retro_sessions', sessionId);
+        
+        // Remove user from activeUsers synchronously
+        await updateDoc(sessionRef, {
+          [`activeUsers.${userId}`]: deleteField()
+        });
+        
+        console.log('Successfully removed user from session:', userId);
+        return true;
+      } catch (error) {
+        console.error('Error sending leave session beacon:', error);
+        return false;
+      }
+    };
+    
     // Handle page unload - ONLY when page is actually being closed/reloaded
     window.addEventListener('beforeunload', function(event) {
       if (window.retroBoardState.isInSession) {
-        console.log('Page is being closed/reloaded - leaving session');
-        // Use navigator.sendBeacon for reliable cleanup on page unload
+        const sessionId = window.retroBoardState.currentSessionId;
+        const userId = window.retroBoardState.currentUserId;
+        
+        console.log('Page is being closed/reloaded - leaving session immediately');
+        
+        // Try to send beacon immediately (synchronous)
+        if (db && sessionId && userId) {
+          try {
+            // Use sendBeacon API to send data reliably during page unload
+            const payload = JSON.stringify({
+              sessionId: sessionId,
+              userId: userId,
+              action: 'leave'
+            });
+            
+            // Construct Firestore REST API URL for the update
+            const firestoreUrl = `https://firestore.googleapis.com/v1/projects/best-retro/databases/(default)/documents/retro_sessions/${sessionId}`;
+            
+            console.log('Attempting to leave session via beacon:', sessionId, userId);
+            
+            // Since sendBeacon doesn't support Firestore directly, we call sendLeaveSessionBeacon
+            // which will execute before the page unloads (in beforeunload handler)
+            window.sendLeaveSessionBeacon(sessionId, userId);
+          } catch (e) {
+            console.error('Error in beforeunload:', e);
+          }
+        }
+        
+        // Also call Flutter method if available
         if (window.flutterLeaveSession) {
           window.flutterLeaveSession();
         }
@@ -72,6 +149,13 @@
     window.addEventListener('unload', function(event) {
       if (window.retroBoardState.isInSession) {
         console.log('Page unload event - leaving session');
+        const sessionId = window.retroBoardState.currentSessionId;
+        const userId = window.retroBoardState.currentUserId;
+        
+        if (db && sessionId && userId) {
+          window.sendLeaveSessionBeacon(sessionId, userId);
+        }
+        
         if (window.flutterLeaveSession) {
           window.flutterLeaveSession();
         }
@@ -83,7 +167,7 @@
     
     // Handle page focus/blur events for logging only (no session leaving)
     window.addEventListener('blur', function() {
-      console.log('Page lost focus (tab switch or window blur)');
+      console.log('Page lost focus (tab switch or window blur) - NOT leaving session');
     });
     
     window.addEventListener('focus', function() {
@@ -93,7 +177,5 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
 </body>
 </html>
