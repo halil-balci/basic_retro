@@ -149,16 +149,19 @@ class _ThoughtCardState extends State<ThoughtCard> with ResponsiveMixin {
         TextField(
           controller: _controller,
           enabled: !_isUpdating,
-          minLines: 1,
+          minLines: 2,
           maxLines: 5,
           style: TextStyle(
             fontSize: isSmall ? 13 : 14,
             color: const Color(0xFF374151),
             height: 1.4,
           ),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isSmall ? 8 : 12,
+              vertical: isSmall ? 6 : 8,
+            ),
             isDense: true,
           ),
           onSubmitted: (_) => _saveEdit(),
