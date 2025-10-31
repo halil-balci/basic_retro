@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/network_exceptions.dart';
+import '../../../../core/constants/environment.dart';
 
 /// Data source for Gemini AI API integration
 class GeminiDataSource {
   final DioClient _dioClient;
   
-  // Load API key from environment variables
-  String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  // Load API key from compile-time environment variables
+  String get _apiKey => Environment.geminiApiKey;
 
   GeminiDataSource(this._dioClient);
 
