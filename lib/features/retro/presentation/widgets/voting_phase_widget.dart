@@ -24,7 +24,7 @@ class VotingPhaseWidget extends BasePhaseWidget {
 
   @override
   String? getAdditionalInfo(BuildContext context) {
-    final viewModel = Provider.of<RetroViewModel>(context, listen: false);
+    final viewModel = Provider.of<RetroViewModel>(context);
     return 'You have ${viewModel.getUserRemainingVotes()} votes remaining';
   }
 

@@ -33,7 +33,23 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
 
   @override
   String? getAdditionalInfo(BuildContext context) {
-    return '${_thoughtGroups.length} groups created';
+    final viewModel = Provider.of<RetroViewModel>(context);
+    
+    // Count groups from viewModel
+    final explicitGroups = viewModel.currentGroups.length;
+    
+    // Count individual thoughts (not in any group)
+    final thoughtsInGroups = viewModel.currentGroups
+        .expand((group) => group.thoughts)
+        .map((t) => t.id)
+        .toSet();
+    
+    final individualThoughts = viewModel.thoughts
+        .where((thought) => !thoughtsInGroups.contains(thought.id))
+        .length;
+    
+    final totalGroups = explicitGroups + individualThoughts;
+    return 'There are $totalGroups groups.';
   }
 
   @override
