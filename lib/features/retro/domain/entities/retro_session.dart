@@ -105,7 +105,7 @@ class RetroSession {
       case RetroPhase.editing:
         return thoughts.isNotEmpty;
       case RetroPhase.grouping:
-        return groups.isNotEmpty;
+        return true;
       case RetroPhase.voting:
         return groups.any((g) => g.votes > 0);
       case RetroPhase.discuss:
