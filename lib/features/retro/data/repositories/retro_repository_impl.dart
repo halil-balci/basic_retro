@@ -5,16 +5,19 @@ import '../../domain/entities/thought_group.dart';
 import '../../domain/entities/action_item.dart';
 import '../../domain/repositories/retro_repository.dart';
 import '../datasources/firebase_retro_datasource.dart';
+import '../datasources/retro_api_datasource.dart';
 import '../models/retro_session_model.dart';
 import '../models/retro_thought_model.dart';
 import '../models/thought_group_model.dart';
 import '../models/action_item_model.dart';
+import '../../../../core/error/network_exceptions.dart';
 
-/// Implementation of RetroRepository using Firebase
+/// Implementation of RetroRepository using Firebase and external APIs
 class RetroRepositoryImpl implements RetroRepository {
-  final FirebaseRetroDataSource _dataSource;
+  final FirebaseRetroDataSource _firebaseDataSource;
+  final RetroApiDataSource _apiDataSource;
 
-  RetroRepositoryImpl(this._dataSource);
+  RetroRepositoryImpl(this._firebaseDataSource, this._apiDataSource);
 
   @override
   Future<RetroSession> createSession(
@@ -22,30 +25,30 @@ class RetroRepositoryImpl implements RetroRepository {
     String creatorId,
     String creatorName,
   ) async {
-    final model = await _dataSource.createSession(name, creatorId, creatorName);
+    final model = await _firebaseDataSource.createSession(name, creatorId, creatorName);
     return model.toEntity();
   }
 
   @override
   Future<RetroSession?> getSession(String sessionId) async {
-    final model = await _dataSource.getSession(sessionId);
+    final model = await _firebaseDataSource.getSession(sessionId);
     return model?.toEntity();
   }
 
   @override
   Stream<RetroSession?> getSessionStream(String sessionId) {
-    return _dataSource.getSessionStream(sessionId).map((model) => model?.toEntity());
+    return _firebaseDataSource.getSessionStream(sessionId).map((model) => model?.toEntity());
   }
 
   @override
   Future<RetroSession?> findSessionByName(String name) async {
-    final model = await _dataSource.findSessionByName(name);
+    final model = await _firebaseDataSource.findSessionByName(name);
     return model?.toEntity();
   }
 
   @override
   Future<List<RetroSession>> getAllSessions() async {
-    final models = await _dataSource.getAllSessions();
+    final models = await _firebaseDataSource.getAllSessions();
     return models.map((model) => model.toEntity()).toList();
   }
 
@@ -58,29 +61,29 @@ class RetroRepositoryImpl implements RetroRepository {
 
   @override
   Future<void> joinSession(String sessionId, String userId, String userName) async {
-    await _dataSource.joinSession(sessionId, userId, userName);
+    await _firebaseDataSource.joinSession(sessionId, userId, userName);
   }
 
   @override
   Future<void> leaveSession(String sessionId, String userId) async {
-    await _dataSource.leaveSession(sessionId, userId);
+    await _firebaseDataSource.leaveSession(sessionId, userId);
   }
 
   @override
   Future<void> updateSession(RetroSession session) async {
-    await _dataSource.updateSession(RetroSessionModel.fromEntity(session));
+    await _firebaseDataSource.updateSession(RetroSessionModel.fromEntity(session));
   }
 
   @override
   Stream<List<RetroThought>> getSessionThoughts(String sessionId) {
-    return _dataSource.getSessionThoughts(sessionId).map(
+    return _firebaseDataSource.getSessionThoughts(sessionId).map(
           (models) => models.map((model) => model.toEntity()).toList(),
         );
   }
 
   @override
   Future<void> addThought(String sessionId, RetroThought thought) async {
-    await _dataSource.addThought(
+    await _firebaseDataSource.addThought(
       sessionId,
       RetroThoughtModel.fromEntity(thought),
     );
@@ -88,7 +91,7 @@ class RetroRepositoryImpl implements RetroRepository {
 
   @override
   Future<void> updateThought(String sessionId, RetroThought thought) async {
-    await _dataSource.updateThought(
+    await _firebaseDataSource.updateThought(
       sessionId,
       RetroThoughtModel.fromEntity(thought),
     );
@@ -96,17 +99,17 @@ class RetroRepositoryImpl implements RetroRepository {
 
   @override
   Future<void> deleteThought(String sessionId, String thoughtId) async {
-    await _dataSource.deleteThought(sessionId, thoughtId);
+    await _firebaseDataSource.deleteThought(sessionId, thoughtId);
   }
 
   @override
   Future<void> updateSessionPhase(String sessionId, RetroPhase phase) async {
-    await _dataSource.updateSessionPhase(sessionId, phase);
+    await _firebaseDataSource.updateSessionPhase(sessionId, phase);
   }
 
   @override
   Future<void> addGroup(String sessionId, ThoughtGroup group) async {
-    await _dataSource.addGroup(
+    await _firebaseDataSource.addGroup(
       sessionId,
       ThoughtGroupModel.fromEntity(group),
     );
@@ -117,7 +120,7 @@ class RetroRepositoryImpl implements RetroRepository {
     String sessionId,
     List<ThoughtGroup> groups,
   ) async {
-    await _dataSource.updateSessionGroups(
+    await _firebaseDataSource.updateSessionGroups(
       sessionId,
       groups.map((g) => ThoughtGroupModel.fromEntity(g)).toList(),
     );
@@ -157,24 +160,24 @@ class RetroRepositoryImpl implements RetroRepository {
 
   @override
   Future<void> clearGroups(String sessionId) async {
-    await _dataSource.clearGroups(sessionId);
+    await _firebaseDataSource.clearGroups(sessionId);
   }
 
   @override
   Stream<List<ThoughtGroup>> getSessionGroups(String sessionId) {
-    return _dataSource.getSessionGroups(sessionId).map(
+    return _firebaseDataSource.getSessionGroups(sessionId).map(
           (models) => models.map((model) => model.toEntity()).toList(),
         );
   }
 
   @override
   Future<void> updateUserVotes(String sessionId, Map<String, int> userVotes) async {
-    await _dataSource.updateUserVotes(sessionId, userVotes);
+    await _firebaseDataSource.updateUserVotes(sessionId, userVotes);
   }
 
   @override
   Future<void> voteForGroup(String sessionId, String groupId, String userId) async {
-    await _dataSource.voteForGroup(sessionId, groupId, userId);
+    await _firebaseDataSource.voteForGroup(sessionId, groupId, userId);
   }
 
   @override
@@ -183,17 +186,17 @@ class RetroRepositoryImpl implements RetroRepository {
     String groupId,
     String userId,
   ) async {
-    await _dataSource.removeVoteFromGroup(sessionId, groupId, userId);
+    await _firebaseDataSource.removeVoteFromGroup(sessionId, groupId, userId);
   }
 
   @override
   Future<void> updateDiscussionGroupIndex(String sessionId, int index) async {
-    await _dataSource.updateDiscussionGroupIndex(sessionId, index);
+    await _firebaseDataSource.updateDiscussionGroupIndex(sessionId, index);
   }
 
   @override
   Stream<List<ActionItem>> getSessionActionItems(String sessionId) {
-    return _dataSource.getSessionActionItems(sessionId).map(
+    return _firebaseDataSource.getSessionActionItems(sessionId).map(
           (models) => models.map((model) => model.toEntity()).toList(),
         );
   }
@@ -201,22 +204,112 @@ class RetroRepositoryImpl implements RetroRepository {
   @override
   Future<void> addActionItem(String sessionId, ActionItem actionItem) async {
     final model = ActionItemModel.fromEntity(actionItem);
-    await _dataSource.addActionItem(sessionId, model);
+    await _firebaseDataSource.addActionItem(sessionId, model);
   }
 
   @override
   Future<void> updateActionItem(String sessionId, ActionItem actionItem) async {
     final model = ActionItemModel.fromEntity(actionItem);
-    await _dataSource.updateActionItem(sessionId, model);
+    await _firebaseDataSource.updateActionItem(sessionId, model);
   }
 
   @override
   Future<void> deleteActionItem(String sessionId, String actionItemId) async {
-    await _dataSource.deleteActionItem(sessionId, actionItemId);
+    await _firebaseDataSource.deleteActionItem(sessionId, actionItemId);
   }
 
   @override
   Future<void> clearSessionData(String sessionId) async {
-    await _dataSource.clearSessionData(sessionId);
+    await _firebaseDataSource.clearSessionData(sessionId);
+  }
+
+  // API-based methods using Dio
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchRetroTemplates() async {
+    try {
+      return await _apiDataSource.fetchRetroTemplates();
+    } on NetworkExceptions {
+      // Return empty list on error or use cached templates
+      return [];
+    }
+  }
+
+  @override
+  Future<void> sendAnalytics({
+    required String sessionId,
+    required String eventType,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      await _apiDataSource.sendAnalytics(
+        sessionId: sessionId,
+        eventType: eventType,
+        data: data,
+      );
+    } on NetworkExceptions catch (e) {
+      // Log error but don't throw - analytics should not break the app
+      // ignore: avoid_print
+      print('Analytics error: ${e.message}');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> exportSessionData({
+    required String sessionId,
+    required String format,
+  }) async {
+    try {
+      return await _apiDataSource.exportSessionData(
+        sessionId: sessionId,
+        format: format,
+      );
+    } on NetworkExceptions {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<String>> fetchRecommendations({
+    required String sessionId,
+    required List<String> categories,
+  }) async {
+    try {
+      return await _apiDataSource.fetchRecommendations(
+        sessionId: sessionId,
+        categories: categories,
+      );
+    } on NetworkExceptions {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> sendFeedbackToApi({
+    required String feedback,
+    String? userId,
+    String? sessionId,
+  }) async {
+    try {
+      await _apiDataSource.sendFeedback(
+        feedback: feedback,
+        userId: userId,
+        sessionId: sessionId,
+      );
+    } on NetworkExceptions catch (e) {
+      // ignore: avoid_print
+      print('Feedback API error: ${e.message}');
+      // Fallback to Firebase if API fails
+      // Could store in Firebase as backup
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getSessionStats(String sessionId) async {
+    try {
+      return await _apiDataSource.getSessionStats(sessionId);
+    } on NetworkExceptions {
+      return null;
+    }
   }
 }

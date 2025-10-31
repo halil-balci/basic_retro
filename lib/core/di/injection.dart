@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 import '../../features/retro/data/datasources/firebase_retro_datasource.dart';
+import '../../features/retro/data/datasources/retro_api_datasource.dart';
 import '../../features/retro/data/repositories/retro_repository_impl.dart';
 import '../../features/retro/domain/repositories/retro_repository.dart';
 import '../../features/retro/domain/usecases/create_session_usecase.dart';
@@ -17,7 +18,7 @@ Future<void> initializeDependencies() async {
   // Core
   getIt.registerLazySingleton<DioClient>(
     () => DioClient(
-      baseUrl: 'https://api.example.com', // Replace with your API URL
+      baseUrl: 'https://api.example.com', // Replace with your actual API URL when available
     ),
   );
 
@@ -31,9 +32,16 @@ Future<void> initializeDependencies() async {
     () => FirebaseRetroDataSource(getIt()),
   );
 
+  getIt.registerLazySingleton<RetroApiDataSource>(
+    () => RetroApiDataSource(getIt()),
+  );
+
   // Repositories
   getIt.registerLazySingleton<RetroRepository>(
-    () => RetroRepositoryImpl(getIt()),
+    () => RetroRepositoryImpl(
+      getIt<FirebaseRetroDataSource>(),
+      getIt<RetroApiDataSource>(),
+    ),
   );
 
   // Use cases

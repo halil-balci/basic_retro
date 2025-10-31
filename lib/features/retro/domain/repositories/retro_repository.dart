@@ -51,5 +51,27 @@ abstract class RetroRepository {
   
   // Session deletion - Deletes entire session including all subcollections
   Future<void> clearSessionData(String sessionId);
+
+  // External API methods (using Dio)
+  Future<List<Map<String, dynamic>>> fetchRetroTemplates();
+  Future<void> sendAnalytics({
+    required String sessionId,
+    required String eventType,
+    required Map<String, dynamic> data,
+  });
+  Future<Map<String, dynamic>?> exportSessionData({
+    required String sessionId,
+    required String format,
+  });
+  Future<List<String>> fetchRecommendations({
+    required String sessionId,
+    required List<String> categories,
+  });
+  Future<void> sendFeedbackToApi({
+    required String feedback,
+    String? userId,
+    String? sessionId,
+  });
+  Future<Map<String, dynamic>?> getSessionStats(String sessionId);
 }
 
