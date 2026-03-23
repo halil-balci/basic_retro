@@ -1,15 +1,11 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/network_exceptions.dart';
-import '../../../../core/constants/environment.dart';
 
 /// Data source for Gemini AI API integration
 class GeminiDataSource {
   final DioClient _dioClient;
   
-  // Load API key from compile-time environment variables
-  String get _apiKey => Environment.geminiApiKey;
-
   GeminiDataSource(this._dioClient);
 
   /// Generate action item from thoughts using Gemini AI
@@ -17,11 +13,6 @@ class GeminiDataSource {
   /// [thoughtTexts] - List of thought texts from a group
   /// Returns the generated action item suggestion
   Future<String> generateActionItem(List<String> thoughtTexts) async {
-    // Check if API key is available
-    if (_apiKey.isEmpty) {
-      throw Exception('Gemini API key not found. Please add GEMINI_API_KEY to .env file');
-    }
-    
     try {
       // Create a prompt from the thoughts
       final prompt = _createPrompt(thoughtTexts);
@@ -37,14 +28,13 @@ class GeminiDataSource {
         ]
       };
 
-      // Make API call using Dio instance directly to use full URL
+      // Make API call using the Cloudflare Worker proxy
       final response = await _dioClient.dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
+        'https://gemini-proxy.halilbalci878.workers.dev',
         data: requestBody,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
-            'x-goog-api-key': _apiKey,
           },
         ),
       );

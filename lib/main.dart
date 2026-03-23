@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/di/injection.dart';
 import 'features/retro/presentation/welcome_view.dart';
 import 'features/retro/presentation/retro_board_view.dart';
@@ -12,12 +11,6 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    debugPrint("Failed to load .env file: $e");
-  }
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
