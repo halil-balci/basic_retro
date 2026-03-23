@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../services/feedback_service.dart';
 import '../../../../services/action_item_export_service.dart';
@@ -137,9 +138,9 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Congratulations!',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -150,8 +151,8 @@ class _FinishPhaseWidgetState extends State<FinishPhaseWidget> {
           const SizedBox(height: 8),
           Text(
             'You have successfully completed all phases.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
+            style: GoogleFonts.inter(
+              color: Colors.white.withOpacity(0.9),
               fontSize: 16,
               fontWeight: FontWeight.w500,
               height: 1.4,

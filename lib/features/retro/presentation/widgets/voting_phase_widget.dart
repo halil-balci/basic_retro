@@ -73,12 +73,14 @@ class VotingPhaseWidget extends BasePhaseWidget {
 
   Color _getColorFromName(String colorName) {
     switch (colorName) {
+      case 'blue':
+        return const Color(0xFF3B82F6);   // Sad
+      case 'orange':
+        return const Color(0xFFEA580C);   // Mad
       case 'green':
-        return const Color(0xFF10B981);
+        return const Color(0xFF10B981);   // Glad
       case 'red':
         return const Color(0xFFEF4444);
-      case 'blue':
-        return const Color(0xFF3B82F6);
       default:
         return const Color(0xFF6B7280);
     }

@@ -70,6 +70,16 @@ class RetroRepositoryImpl implements RetroRepository {
   }
 
   @override
+  Future<void> updateHeartbeat(String sessionId, String userId) async {
+    await _firebaseDataSource.updateHeartbeat(sessionId, userId);
+  }
+
+  @override
+  Future<void> cleanupStaleUsers(String sessionId) async {
+    await _firebaseDataSource.cleanupStaleUsers(sessionId);
+  }
+
+  @override
   Future<void> updateSession(RetroSession session) async {
     await _firebaseDataSource.updateSession(RetroSessionModel.fromEntity(session));
   }

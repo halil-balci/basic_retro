@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../retro_view_model.dart';
 import 'finish_phase_widget.dart';
@@ -39,17 +40,25 @@ class DiscussPhaseWidget extends BasePhaseWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
                 Text(
                   'No groups available for discussion.',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: isSmallScreen ? 14 : 16,
-                    color: Colors.grey,
+                    color: Colors.grey.shade600,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => _createGroupsFromThoughts(viewModel),
-                  child: const Text('Create Groups from Thoughts'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Create Groups from Thoughts', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -62,26 +71,40 @@ class DiscussPhaseWidget extends BasePhaseWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'All groups are discussed',
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 18 : 20,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF059669).withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.check_circle_outline, size: 64, color: Color(0xFF059669)),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: viewModel.canAdvancePhase
-                      ? () async {
-                          await viewModel.advancePhase();
-                        }
-                      : null,
-                  icon: const Icon(Icons.flag),
-                  label: const Text('Finish and Go to Notification Phase'),
+                Text(
+                  'All groups are discussed',
+                  style: GoogleFonts.inter(
+                    fontSize: isSmallScreen ? 20 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: viewModel.canAdvancePhase ? () async => await viewModel.advancePhase() : null,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     backgroundColor: const Color(0xFF059669),
                     foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.flag_rounded),
+                      const SizedBox(width: 8),
+                      Text('Finish Retro', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ],
                   ),
                 ),
               ],
@@ -96,16 +119,21 @@ class DiscussPhaseWidget extends BasePhaseWidget {
               children: [
                 Text(
                   'No groups available for discussion.',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: isSmallScreen ? 14 : 16,
-                    color: Colors.grey,
+                    color: Colors.grey.shade600,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _createGroupsFromThoughts(viewModel),
-                  child: const Text('Create Groups from Thoughts'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text('Create Groups from Thoughts', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),

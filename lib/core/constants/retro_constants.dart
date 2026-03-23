@@ -25,9 +25,9 @@ class RetroConstants {
   
   // Kategori renkleri
   static Map<String, String> categoryColors = {
-    categories[0]: 'green',
-    categories[1]: 'red',
-    categories[2]: 'blue',
+    categories[0]: 'blue',    // Sad  → mavi
+    categories[1]: 'orange',  // Mad  → turuncu/kırmızı
+    categories[2]: 'green',   // Glad → yeşil
   };
   
   // Boş kategori map'i oluşturma helper'ı

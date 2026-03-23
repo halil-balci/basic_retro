@@ -15,6 +15,8 @@ abstract class RetroRepository {
   Stream<List<RetroSession>> getUserSessions(String userId);
   Future<void> joinSession(String sessionId, String userId, String userName);
   Future<void> leaveSession(String sessionId, String userId);
+  Future<void> updateHeartbeat(String sessionId, String userId);
+  Future<void> cleanupStaleUsers(String sessionId);
   Future<void> updateSession(RetroSession session);
 
   // Thoughts management

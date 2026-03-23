@@ -103,32 +103,56 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
+          // Header — left-aligned
           Container(
-            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 12 : 16,
+              vertical: isSmallScreen ? 12 : 14,
+            ),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.05),
+              color: color.withValues(alpha: 0.06),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(10),
                 topRight: Radius.circular(10),
               ),
             ),
-            child: Column(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  _getCategoryIcon(category),
-                  color: color,
-                  size: isSmallScreen ? 20 : 24,
-                ),
-                SizedBox(height: isSmallScreen ? 6 : 8),
-                Text(
-                  RetroConstants.categoryTitles[category] ?? category,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 14 : 16,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  textAlign: TextAlign.center,
+                  child: Icon(
+                    _getCategoryIcon(category),
+                    color: color,
+                    size: isSmallScreen ? 18 : 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      RetroConstants.categoryTitles[category] ?? category,
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 14 : 16,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                    if (RetroConstants.categoryDescriptions[category] != null)
+                      Text(
+                        RetroConstants.categoryDescriptions[category]!,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 10 : 11,
+                          color: color.withValues(alpha: 0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -269,6 +293,12 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
+      case 'Sad':
+        return Icons.sentiment_dissatisfied_rounded;
+      case 'Mad':
+        return Icons.mood_bad_rounded;
+      case 'Glad':
+        return Icons.sentiment_very_satisfied_rounded;
       case 'Start':
         return Icons.lightbulb_rounded;
       case 'Stop':
@@ -282,12 +312,14 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
 
   Color _getColorFromName(String colorName) {
     switch (colorName.toLowerCase()) {
+      case 'blue':
+        return const Color(0xFF3B82F6);   // Sad
+      case 'orange':
+        return const Color(0xFFEA580C);   // Mad
       case 'green':
-        return const Color(0xFF10B981);
+        return const Color(0xFF10B981);   // Glad
       case 'red':
         return const Color(0xFFEF4444);
-      case 'blue':
-        return const Color(0xFF3B82F6);
       default:
         return const Color(0xFF6B7280);
     }

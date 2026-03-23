@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/retro_session_model.dart';
 import '../models/retro_thought_model.dart';
 import '../models/thought_group_model.dart';
@@ -90,7 +91,10 @@ class FirebaseRetroDataSource {
         .doc(sessionId)
         .update({
       'participants': FieldValue.arrayUnion([userId]),
-      'activeUsers.$userId': userName,
+      'activeUsers.$userId': {
+        'name': userName,
+        'lastSeen': FieldValue.serverTimestamp(),
+      },
     });
   }
 
@@ -101,6 +105,69 @@ class FirebaseRetroDataSource {
         .update({
       'activeUsers.$userId': FieldValue.delete(),
     });
+  }
+
+  /// Update heartbeat timestamp for the given user
+  Future<void> updateHeartbeat(String sessionId, String userId) async {
+    await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .update({
+      'activeUsers.$userId.lastSeen': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Remove users who haven't sent a heartbeat in the given duration
+  Future<void> cleanupStaleUsers(String sessionId, {Duration staleDuration = const Duration(minutes: 2)}) async {
+    final doc = await _firestore
+        .collection(_sessionsCollection)
+        .doc(sessionId)
+        .get();
+    
+    if (!doc.exists) return;
+    
+    final data = doc.data()!;
+    final activeUsers = data['activeUsers'] as Map<String, dynamic>? ?? {};
+    final now = DateTime.now();
+    final staleUserIds = <String>[];
+    
+    for (final entry in activeUsers.entries) {
+      final userId = entry.key;
+      final userData = entry.value;
+      
+      // Handle both old format (string) and new format (map with lastSeen)
+      if (userData is String) {
+        // Old format without timestamp — consider stale
+        staleUserIds.add(userId);
+      } else if (userData is Map<String, dynamic>) {
+        final lastSeen = userData['lastSeen'];
+        if (lastSeen == null) {
+          staleUserIds.add(userId);
+        } else {
+          DateTime lastSeenTime;
+          if (lastSeen is Timestamp) {
+            lastSeenTime = lastSeen.toDate();
+          } else {
+            continue;
+          }
+          if (now.difference(lastSeenTime) > staleDuration) {
+            staleUserIds.add(userId);
+          }
+        }
+      }
+    }
+    
+    if (staleUserIds.isNotEmpty) {
+      final updates = <String, dynamic>{};
+      for (final userId in staleUserIds) {
+        updates['activeUsers.$userId'] = FieldValue.delete();
+      }
+      await _firestore
+          .collection(_sessionsCollection)
+          .doc(sessionId)
+          .update(updates);
+      debugPrint('Cleaned up ${staleUserIds.length} stale users from session $sessionId');
+    }
   }
 
   Future<void> updateSession(RetroSessionModel session) async {

@@ -47,7 +47,7 @@ class RetroSessionModel extends RetroSession {
       creatorId: json['creatorId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       participants: List<String>.from(json['participants'] ?? []),
-      activeUsers: Map<String, String>.from(json['activeUsers'] ?? {}),
+      activeUsers: _parseActiveUsers(json['activeUsers']),
       isActive: json['isActive'] as bool? ?? true,
       columns: List<String>.from(json['columns'] ?? RetroConstants.categories),
       thoughts: (json['thoughts'] as List<dynamic>?)
@@ -60,6 +60,26 @@ class RetroSessionModel extends RetroSession {
       userVotes: Map<String, int>.from(json['userVotes'] ?? {}),
       currentDiscussionGroupIndex: json['currentDiscussionGroupIndex'] as int? ?? 0,
     );
+  }
+
+  /// Parse activeUsers handling both old ('userId': 'name') and new ('userId': {'name': '...', 'lastSeen': ...}) formats
+  static Map<String, String> _parseActiveUsers(dynamic raw) {
+    if (raw == null) return {};
+    if (raw is! Map) return {};
+    
+    final result = <String, String>{};
+    for (final entry in (raw as Map).entries) {
+      final key = entry.key.toString();
+      final value = entry.value;
+      if (value is String) {
+        // Old format
+        result[key] = value;
+      } else if (value is Map) {
+        // New format with heartbeat
+        result[key] = (value['name'] as String?) ?? 'Unknown';
+      }
+    }
+    return result;
   }
 
   Map<String, dynamic> toJson() {

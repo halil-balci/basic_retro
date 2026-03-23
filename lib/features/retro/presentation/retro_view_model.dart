@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../domain/entities/retro_thought.dart';
 import '../domain/entities/retro_session.dart';
@@ -15,6 +16,7 @@ class RetroViewModel extends ChangeNotifier {
   late final GenerateActionItemUseCase _generateActionItemUseCase;
   late final String _currentUserId;
   late final String _currentUserName;
+  Timer? _heartbeatTimer;
   
   List<RetroSession> _userSessions = [];
   List<RetroSession> get userSessions => _userSessions;
@@ -190,6 +192,7 @@ class RetroViewModel extends ChangeNotifier {
       try {
         // First leave the current session if any
         if (_currentSessionId != null) {
+          _stopHeartbeat();
           await _repository.leaveSession(_currentSessionId!, _currentUserId);
         }
 
@@ -198,8 +201,14 @@ class RetroViewModel extends ChangeNotifier {
           _currentSessionId = sessionId;
           _currentSession = session;
           
+          // Clean up stale users before joining
+          await _repository.cleanupStaleUsers(sessionId);
+          
           // Join the new session as an active user
           await _repository.joinSession(sessionId, _currentUserId, _currentUserName);
+          
+          // Start heartbeat
+          _startHeartbeat();
           
           // Register session with web service for cleanup
           WebSessionService.registerSession(sessionId, _currentUserId);
@@ -423,6 +432,7 @@ class RetroViewModel extends ChangeNotifier {
     if (_currentSessionId != null) {
       try {
         debugPrint('Leaving session: $_currentSessionId for user: $_currentUserId');
+        _stopHeartbeat();
         await _repository.leaveSession(_currentSessionId!, _currentUserId);
         
         // Unregister from web service
@@ -440,6 +450,25 @@ class RetroViewModel extends ChangeNotifier {
         debugPrint('Error leaving session: $e');
       }
     }
+  }
+
+  void _startHeartbeat() {
+    _stopHeartbeat();
+    // Send heartbeat every 30 seconds
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      if (_currentSessionId != null) {
+        try {
+          await _repository.updateHeartbeat(_currentSessionId!, _currentUserId);
+        } catch (e) {
+          debugPrint('Heartbeat error: $e');
+        }
+      }
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
   }
 
   void _setLoading(bool value) {

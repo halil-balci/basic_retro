@@ -39,30 +39,54 @@ class CategoryColumn extends StatelessWidget with ResponsiveMixin {
 
   Widget _buildHeader(BuildContext context, bool isSmall) {
     return Container(
-      padding: EdgeInsets.all(isSmall ? 12 : 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 12 : 16,
+        vertical: isSmall ? 12 : 14,
+      ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withOpacity(0.06),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(10),
           topRight: Radius.circular(10),
         ),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            _getCategoryIcon(category),
-            color: color,
-            size: isSmall ? 20 : 24,
-          ),
-          SizedBox(height: isSmall ? 6 : 8),
-          Text(
-            RetroConstants.categoryTitles[category] ?? category,
-            style: TextStyle(
-              fontSize: isSmall ? 14 : 16,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
             ),
-            textAlign: TextAlign.center,
+            child: Icon(
+              _getCategoryIcon(category),
+              color: color,
+              size: isSmall ? 18 : 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                RetroConstants.categoryTitles[category] ?? category,
+                style: TextStyle(
+                  fontSize: isSmall ? 14 : 16,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+              if (RetroConstants.categoryDescriptions[category] != null)
+                Text(
+                  RetroConstants.categoryDescriptions[category]!,
+                  style: TextStyle(
+                    fontSize: isSmall ? 10 : 11,
+                    color: color.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -71,6 +95,13 @@ class CategoryColumn extends StatelessWidget with ResponsiveMixin {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
+      case 'Sad':
+        return Icons.sentiment_dissatisfied_rounded;
+      case 'Mad':
+        return Icons.mood_bad_rounded;
+      case 'Glad':
+        return Icons.sentiment_very_satisfied_rounded;
+      // legacy keys
       case 'went_well':
       case 'keep':
         return Icons.thumb_up_rounded;
