@@ -39,12 +39,12 @@ class GeminiDataSource {
 
       // Make API call using Dio instance directly to use full URL
       final response = await _dioClient.dio.post(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent',
         data: requestBody,
         options: Options(
           headers: {
             'Content-Type': 'application/json',
-            'X-goog-api-key': _apiKey,
+            'x-goog-api-key': _apiKey,
           },
         ),
       );

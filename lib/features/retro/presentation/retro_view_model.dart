@@ -17,6 +17,7 @@ class RetroViewModel extends ChangeNotifier {
   late final String _currentUserId;
   late final String _currentUserName;
   Timer? _heartbeatTimer;
+  Map<String, int> _aiGenerationCountsByGroup = {};
   
   List<RetroSession> _userSessions = [];
   List<RetroSession> get userSessions => _userSessions;
@@ -442,6 +443,7 @@ class RetroViewModel extends ChangeNotifier {
         _currentSessionId = null;
         _currentSession = null;
         _clearThoughts();
+        _aiGenerationCountsByGroup.clear();
         _cachedActionItems = []; // Clear cached action items when leaving
         
         notifyListeners();
@@ -877,6 +879,13 @@ class RetroViewModel extends ChangeNotifier {
       throw Exception('No group currently being discussed');
     }
 
+    final groupId = currentGroup.id;
+    final currentCount = _aiGenerationCountsByGroup[groupId] ?? 0;
+    
+    if (currentCount >= 2) {
+      throw Exception('Bu grup için maksimum yapay zeka üretim limitine (2 kez) ulaştınız.');
+    }
+
     _isGeneratingActionItem = true;
     _generatedActionItem = null;
     notifyListeners();
@@ -918,6 +927,7 @@ class RetroViewModel extends ChangeNotifier {
           // Remove any other markdown bold markers that might be in the middle
           cleanedText = cleanedText.replaceAll('**', '');
           
+          _aiGenerationCountsByGroup[groupId] = currentCount + 1;
           _generatedActionItem = cleanedText;
           debugPrint('Action item generated successfully: $cleanedText');
         },

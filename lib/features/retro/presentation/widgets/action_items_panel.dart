@@ -389,7 +389,7 @@ class _ActionItemsPanelState extends State<ActionItemsPanel> with SingleTickerPr
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error generating action item: $e'),
+          content: Text(e.toString()),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 4),
         ),

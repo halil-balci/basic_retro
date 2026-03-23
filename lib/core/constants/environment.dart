@@ -1,12 +1,10 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Environment configuration for the app
-/// API keys and sensitive data should be passed as compile-time variables
+/// Loads configuration from the .env file.
 class Environment {
   /// Gemini API key for AI features
-  /// Pass via: flutter build web --dart-define=GEMINI_API_KEY=your_key_here
-  static const String geminiApiKey = String.fromEnvironment(
-    'GEMINI_API_KEY',
-    defaultValue: '',
-  );
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
   /// Check if Gemini API key is configured
   static bool get hasGeminiApiKey => geminiApiKey.isNotEmpty;
