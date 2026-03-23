@@ -201,6 +201,115 @@ class FirebaseRetroDataSource {
         .update({'groups': []});
   }
 
+  /// Atomically merge two thoughts into a new group.
+  /// Removes the thoughts from any existing groups and creates a new group.
+  Future<void> mergeThoughtsToNewGroup(
+    String sessionId,
+    ThoughtGroupModel newGroup,
+    List<String> thoughtIds,
+  ) async {
+    final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+    
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+      if (!snapshot.exists) throw Exception('Session not found');
+      
+      final data = snapshot.data()!;
+      final groupsList = (data['groups'] as List<dynamic>? ?? [])
+          .map((g) => Map<String, dynamic>.from(g as Map))
+          .toList();
+      
+      final thoughtIdSet = thoughtIds.toSet();
+      final updatedGroups = <Map<String, dynamic>>[];
+      
+      for (final group in groupsList) {
+        final groupThoughts = (group['thoughts'] as List<dynamic>? ?? [])
+            .map((t) => Map<String, dynamic>.from(t as Map))
+            .toList();
+        
+        // Remove the target thoughts from this group
+        groupThoughts.removeWhere((t) => thoughtIdSet.contains(t['id']));
+        
+        // Only keep the group if it still has thoughts
+        if (groupThoughts.isNotEmpty) {
+          updatedGroups.add({...group, 'thoughts': groupThoughts});
+        }
+      }
+      
+      // Add the new group
+      updatedGroups.add(newGroup.toJson());
+      
+      transaction.update(sessionRef, {'groups': updatedGroups});
+    });
+  }
+
+  /// Atomically add a thought to an existing group.
+  /// Removes the thought from any other group it may belong to.
+  Future<void> addThoughtToExistingGroup(
+    String sessionId,
+    String targetGroupId,
+    Map<String, dynamic> thoughtJson,
+  ) async {
+    final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+    final thoughtId = thoughtJson['id'] as String;
+    
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+      if (!snapshot.exists) throw Exception('Session not found');
+      
+      final data = snapshot.data()!;
+      final groupsList = (data['groups'] as List<dynamic>? ?? [])
+          .map((g) => Map<String, dynamic>.from(g as Map))
+          .toList();
+      
+      final updatedGroups = <Map<String, dynamic>>[];
+      
+      for (final group in groupsList) {
+        final groupId = group['id'] as String;
+        final groupThoughts = (group['thoughts'] as List<dynamic>? ?? [])
+            .map((t) => Map<String, dynamic>.from(t as Map))
+            .toList();
+        
+        if (groupId == targetGroupId) {
+          // Add thought to target group (if not already there)
+          if (!groupThoughts.any((t) => t['id'] == thoughtId)) {
+            groupThoughts.add(thoughtJson);
+          }
+          updatedGroups.add({...group, 'thoughts': groupThoughts});
+        } else {
+          // Remove the thought from other groups
+          groupThoughts.removeWhere((t) => t['id'] == thoughtId);
+          if (groupThoughts.isNotEmpty) {
+            updatedGroups.add({...group, 'thoughts': groupThoughts});
+          }
+        }
+      }
+      
+      transaction.update(sessionRef, {'groups': updatedGroups});
+    });
+  }
+
+  /// Atomically split a group — removes the group entirely.
+  /// Thoughts become ungrouped.
+  Future<void> splitGroupAtomic(String sessionId, String groupId) async {
+    final sessionRef = _firestore.collection(_sessionsCollection).doc(sessionId);
+    
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+      if (!snapshot.exists) throw Exception('Session not found');
+      
+      final data = snapshot.data()!;
+      final groupsList = (data['groups'] as List<dynamic>? ?? [])
+          .map((g) => Map<String, dynamic>.from(g as Map))
+          .toList();
+      
+      // Remove the target group
+      groupsList.removeWhere((g) => g['id'] == groupId);
+      
+      transaction.update(sessionRef, {'groups': groupsList});
+    });
+  }
+
   Stream<List<ThoughtGroupModel>> getSessionGroups(String sessionId) {
     return _firestore
         .collection(_sessionsCollection)

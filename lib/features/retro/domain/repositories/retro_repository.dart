@@ -34,6 +34,9 @@ abstract class RetroRepository {
   Future<void> updateGroupName(String sessionId, String groupId, String newName);
   Future<void> clearGroups(String sessionId);
   Stream<List<ThoughtGroup>> getSessionGroups(String sessionId);
+  Future<void> mergeThoughtsToNewGroup(String sessionId, ThoughtGroup newGroup, List<String> thoughtIds);
+  Future<void> addThoughtToExistingGroup(String sessionId, String targetGroupId, RetroThought thought);
+  Future<void> splitGroupAtomic(String sessionId, String groupId);
   
   // Voting management
   Future<void> updateUserVotes(String sessionId, Map<String, int> userVotes);

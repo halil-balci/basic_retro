@@ -171,6 +171,38 @@ class RetroRepositoryImpl implements RetroRepository {
   }
 
   @override
+  Future<void> mergeThoughtsToNewGroup(
+    String sessionId,
+    ThoughtGroup newGroup,
+    List<String> thoughtIds,
+  ) async {
+    await _firebaseDataSource.mergeThoughtsToNewGroup(
+      sessionId,
+      ThoughtGroupModel.fromEntity(newGroup),
+      thoughtIds,
+    );
+  }
+
+  @override
+  Future<void> addThoughtToExistingGroup(
+    String sessionId,
+    String targetGroupId,
+    RetroThought thought,
+  ) async {
+    final thoughtModel = RetroThoughtModel.fromEntity(thought);
+    await _firebaseDataSource.addThoughtToExistingGroup(
+      sessionId,
+      targetGroupId,
+      thoughtModel.toJson(),
+    );
+  }
+
+  @override
+  Future<void> splitGroupAtomic(String sessionId, String groupId) async {
+    await _firebaseDataSource.splitGroupAtomic(sessionId, groupId);
+  }
+
+  @override
   Future<void> updateUserVotes(String sessionId, Map<String, int> userVotes) async {
     await _firebaseDataSource.updateUserVotes(sessionId, userVotes);
   }

@@ -481,10 +481,8 @@ class RetroViewModel extends ChangeNotifier {
         await _repository.updateDiscussionGroupIndex(_currentSessionId!, 0);
       }
       
-      // If advancing to grouping phase, create initial groups from thoughts
-      if (nextPhase == RetroPhase.grouping) {
-        await _createInitialGroups();
-      }
+      // Grouping phase: no initial groups needed — widget shows ungrouped thoughts
+      // and users create groups by dragging thoughts together.
       
       // If advancing to finish phase, delete the entire session
       if (nextPhase == RetroPhase.finish) {
@@ -641,6 +639,35 @@ class RetroViewModel extends ChangeNotifier {
   Future<void> clearGroups() async {
     if (_currentSessionId == null) return;
     await _repository.clearGroups(_currentSessionId!);
+  }
+
+  // Atomic Group Operations (for concurrent grouping)
+  Future<void> mergeThoughtsToNewGroup(List<RetroThought> thoughts) async {
+    if (_currentSessionId == null) return;
+    
+    final groupId = 'group_${DateTime.now().millisecondsSinceEpoch}';
+    final primaryCategory = thoughts.first.category;
+    final groupName = 'Group from $primaryCategory (${thoughts.length} items)';
+    
+    final newGroup = ThoughtGroup(
+      id: groupId,
+      name: groupName,
+      thoughts: thoughts,
+      sessionId: _currentSessionId!,
+    );
+    
+    final thoughtIds = thoughts.map((t) => t.id).toList();
+    await _repository.mergeThoughtsToNewGroup(_currentSessionId!, newGroup, thoughtIds);
+  }
+
+  Future<void> addThoughtToExistingGroup(String groupId, RetroThought thought) async {
+    if (_currentSessionId == null) return;
+    await _repository.addThoughtToExistingGroup(_currentSessionId!, groupId, thought);
+  }
+
+  Future<void> splitGroupAtomic(String groupId) async {
+    if (_currentSessionId == null) return;
+    await _repository.splitGroupAtomic(_currentSessionId!, groupId);
   }
 
   // Initialize groups from thoughts (for grouping phase)

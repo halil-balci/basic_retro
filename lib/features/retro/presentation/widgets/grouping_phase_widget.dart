@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/entities/retro_thought.dart';
+import '../../domain/entities/thought_group.dart';
 import '../retro_view_model.dart';
 import '../../../../core/constants/retro_constants.dart';
 import '../../../../core/presentation/widgets/base_stateful_phase_widget.dart';
@@ -25,17 +26,12 @@ class GroupingPhaseWidget extends BaseStatefulPhaseWidget {
 }
 
 class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidget> {
-  // Map to track groups - each group has an ID and list of thoughts
-  Map<String, List<RetroThought>> _thoughtGroups = {};
-  // Map to track which group each thought belongs to
-  Map<String, String> _thoughtToGroupMapping = {};
-  int _nextGroupId = 1;
 
   @override
   String? getAdditionalInfo(BuildContext context) {
     final viewModel = Provider.of<RetroViewModel>(context);
     
-    // Count groups from viewModel
+    // Count explicit groups (multi-thought groups from Firebase)
     final explicitGroups = viewModel.currentGroups.length;
     
     // Count individual thoughts (not in any group)
@@ -56,7 +52,6 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
   Widget buildPhaseContent(BuildContext context, bool isSmallScreen) {
     return Consumer<RetroViewModel>(
       builder: (context, viewModel, child) {
-        // Responsive layout - vertical on small screens, horizontal on large screens
         return isSmallScreen
           ? Column(
               children: RetroConstants.categories.map((category) {
@@ -97,7 +92,7 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
       constraints: isSmallScreen 
         ? null 
         : const BoxConstraints(
-            minHeight: 200, // Minimum height for drag-drop on large screens
+            minHeight: 200,
           ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -138,59 +133,138 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
               ],
             ),
           ),
-          // Drop target area for grouping
-          DragTarget<RetroThought>(
-            onWillAccept: (data) {
-              return data != null;
-            },
-            onAccept: (thought) {
-              _moveThoughtToCategory(thought, category, viewModel);
-            },
-            builder: (context, candidateData, rejectedData) {
-              final isHighlighted = candidateData.isNotEmpty;
-              final thoughtsList = _buildDraggableThoughtsList(category, viewModel);
-              
-              return Container(
-                constraints: BoxConstraints(
-                  minHeight: thoughtsList.isEmpty ? (isSmallScreen ? 80 : 120) : 0, // Responsive minimal height
-                ),
-                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                decoration: BoxDecoration(
-                  color: isHighlighted 
-                      ? color.withValues(alpha: 0.1) 
-                      : Colors.transparent,
-                  border: isHighlighted
-                      ? Border.all(color: color, width: 2)
-                      : null,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                ),
-                child: thoughtsList.isEmpty
-                  ? Center(
-                      child: Text(
-                        isHighlighted 
-                          ? 'Drop here to group' 
-                          : 'Drag thoughts here to group them',
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: isSmallScreen ? 12 : 14,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: thoughtsList,
-                    ),
-              );
-            },
+          // Content area
+          Container(
+            constraints: BoxConstraints(
+              minHeight: isSmallScreen ? 80 : 120,
+            ),
+            padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+            child: _buildCategoryContent(category, viewModel),
           ),
         ],
       ),
     );
+  }
+
+  /// Build the content for a category column, using Firebase groups as source of truth
+  Widget _buildCategoryContent(String category, RetroViewModel viewModel) {
+    final categoryThoughts = viewModel.thoughtsByCategory[category] ?? <RetroThought>[];
+    
+    if (categoryThoughts.isEmpty) {
+      return Center(
+        child: Text(
+          'No thoughts in this category',
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 14,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    
+    // Build a mapping: thoughtId -> group (from Firebase groups)
+    final thoughtToGroup = <String, ThoughtGroup>{};
+    for (final group in viewModel.currentGroups) {
+      for (final thought in group.thoughts) {
+        thoughtToGroup[thought.id] = group;
+      }
+    }
+    
+    final widgets = <Widget>[];
+    final processedThoughts = <String>{};
+    final processedGroups = <String>{};
+    
+    for (final thought in categoryThoughts) {
+      if (processedThoughts.contains(thought.id)) continue;
+      
+      final group = thoughtToGroup[thought.id];
+      
+      if (group != null && group.thoughts.length > 1) {
+        // This thought is in a multi-thought group
+        // Show the group card once, in its primary category (first thought's category)
+        final primaryCategory = group.thoughts.first.category;
+        
+        if (primaryCategory == category && !processedGroups.contains(group.id)) {
+          widgets.add(Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: _GroupCard(
+              groupId: group.id,
+              thoughts: group.thoughts,
+              onSplit: () => _splitGroup(group.id, viewModel),
+              viewModel: viewModel,
+              onAddToGroup: (droppedThought) => _addThoughtToGroup(droppedThought, group.id, viewModel),
+            ),
+          ));
+          
+          processedGroups.add(group.id);
+          for (final groupThought in group.thoughts) {
+            processedThoughts.add(groupThought.id);
+          }
+        } else {
+          // Group shown in another category, mark as processed
+          processedThoughts.add(thought.id);
+        }
+      } else {
+        // Ungrouped thought (or in a single-thought group) — show as individual draggable card
+        widgets.add(Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: _DraggableThoughtCard(
+            thought: thought,
+            viewModel: viewModel,
+            onGroupWith: (targetThought) => _createGroup([thought, targetThought], viewModel),
+          ),
+        ));
+        processedThoughts.add(thought.id);
+      }
+    }
+    
+    if (widgets.isEmpty) {
+      return Center(
+        child: Text(
+          'Drag thoughts here to group them',
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 14,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: widgets,
+    );
+  }
+
+  /// Create a new group from multiple thoughts — atomic Firebase operation
+  void _createGroup(List<RetroThought> thoughts, RetroViewModel viewModel) async {
+    try {
+      await viewModel.mergeThoughtsToNewGroup(thoughts);
+    } catch (e) {
+      debugPrint('Error creating group: $e');
+    }
+  }
+
+  /// Split a group — atomic Firebase operation
+  void _splitGroup(String groupId, RetroViewModel viewModel) async {
+    try {
+      await viewModel.splitGroupAtomic(groupId);
+    } catch (e) {
+      debugPrint('Error splitting group: $e');
+    }
+  }
+
+  /// Add a thought to an existing group — atomic Firebase operation
+  void _addThoughtToGroup(RetroThought thought, String groupId, RetroViewModel viewModel) async {
+    try {
+      await viewModel.addThoughtToExistingGroup(groupId, thought);
+    } catch (e) {
+      debugPrint('Error adding thought to group: $e');
+    }
   }
 
   IconData _getCategoryIcon(String category) {
@@ -206,184 +280,6 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
     }
   }
 
-  List<Widget> _buildDraggableThoughtsList(String category, RetroViewModel viewModel) {
-    final thoughts = viewModel.thoughtsByCategory[category] ?? <RetroThought>[];
-    
-    if (thoughts.isEmpty) {
-      return [
-        Container(
-          height: 100,
-          alignment: Alignment.center,
-          child: Text(
-            'Drop thoughts here',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-      ];
-    }
-    
-    final widgets = <Widget>[];
-    final processedThoughts = <String>{}; // Track which thoughts we've already processed
-    final processedGroups = <String>{}; // Track which groups we've already processed
-    
-    for (final thought in thoughts) {
-      if (processedThoughts.contains(thought.id)) {
-        continue; // Skip if we've already processed this thought as part of a group
-      }
-      
-      final groupId = _thoughtToGroupMapping[thought.id];
-      
-      if (groupId != null && _thoughtGroups[groupId] != null && _thoughtGroups[groupId]!.length > 1) {
-        // Check if this group should be displayed in this category
-        final groupThoughts = _thoughtGroups[groupId]!;
-        final primaryCategory = groupThoughts.first.category; // Use first thought's category as primary
-        
-        if (primaryCategory == category && !processedGroups.contains(groupId)) {
-          // This group belongs to this category and hasn't been processed yet
-          widgets.add(Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: _GroupCard(
-              groupId: groupId,
-              thoughts: groupThoughts,
-              onSplit: () => _splitGroup(groupId),
-              viewModel: viewModel,
-              onAddToGroup: (thought) => _addThoughtToGroup(thought, groupId),
-            ),
-          ));
-          
-          processedGroups.add(groupId);
-          
-          // Mark all thoughts in this group as processed
-          for (final groupThought in groupThoughts) {
-            processedThoughts.add(groupThought.id);
-          }
-        } else {
-          // This thought belongs to a group in another category or already processed, mark as processed
-          processedThoughts.add(thought.id);
-        }
-      } else if (!processedThoughts.contains(thought.id)) {
-        // This is a single thought that belongs to this category
-        widgets.add(Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: _DraggableThoughtCard(
-            thought: thought,
-            viewModel: viewModel,
-            onGroupWith: (targetThought) => _createGroup([thought, targetThought]),
-          ),
-        ));
-        processedThoughts.add(thought.id);
-      }
-    }
-    
-    return widgets;
-  }
-
-  void _createGroup(List<RetroThought> thoughts) {
-    setState(() {
-      final groupId = 'group_${_nextGroupId++}';
-      _thoughtGroups[groupId] = thoughts;
-      
-      // Update mapping for all thoughts in the group
-      for (final thought in thoughts) {
-        _thoughtToGroupMapping[thought.id] = groupId;
-      }
-    });
-    
-    // Save groups to ViewModel whenever groups are created/modified
-    _saveGroupsToViewModel();
-  }
-
-  Future<void> _saveGroupsToViewModel() async {
-    final viewModel = Provider.of<RetroViewModel>(context, listen: false);
-    
-    try {
-      // Clear existing groups first
-      await viewModel.clearGroups();
-      
-      // Convert local groups to ThoughtGroup objects and save them
-      for (final entry in _thoughtGroups.entries) {
-        final thoughts = entry.value;
-        
-        if (thoughts.isNotEmpty) {
-          // Group name based on primary category and contents
-          final primaryCategory = thoughts.first.category;
-          final categoryCounts = <String, int>{};
-          for (final thought in thoughts) {
-            categoryCounts[thought.category] = (categoryCounts[thought.category] ?? 0) + 1;
-          }
-          
-          String groupName;
-          if (categoryCounts.length == 1) {
-            // Single category group
-            groupName = 'Group from $primaryCategory (${thoughts.length} items)';
-          } else {
-            // Multi-category group
-            final categoryList = categoryCounts.entries
-                .map((e) => '${e.value} ${e.key}')
-                .join(', ');
-            groupName = 'Mixed Group ($categoryList)';
-          }
-          
-          await viewModel.createGroup(
-            groupName,
-            thoughts,
-            0.0,
-            0.0,
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error saving groups to ViewModel: $e');
-    }
-  }
-
-  void _splitGroup(String groupId) {
-    setState(() {
-      final thoughts = _thoughtGroups[groupId];
-      if (thoughts != null) {
-        // Remove group mapping for all thoughts
-        for (final thought in thoughts) {
-          _thoughtToGroupMapping.remove(thought.id);
-        }
-        // Remove the group
-        _thoughtGroups.remove(groupId);
-      }
-    });
-    
-    // Save groups to ViewModel after splitting
-    _saveGroupsToViewModel();
-  }
-
-  void _addThoughtToGroup(RetroThought thought, String groupId) {
-    setState(() {
-      // Remove from any existing group
-      final oldGroupId = _thoughtToGroupMapping[thought.id];
-      if (oldGroupId != null && oldGroupId != groupId) {
-        _thoughtGroups[oldGroupId]?.remove(thought);
-        if (_thoughtGroups[oldGroupId]?.isEmpty ?? false) {
-          _thoughtGroups.remove(oldGroupId);
-        }
-      }
-      
-      // Add to new group
-      _thoughtToGroupMapping[thought.id] = groupId;
-      _thoughtGroups[groupId]?.add(thought);
-    });
-    
-    // Save groups to ViewModel after adding thought to group
-    _saveGroupsToViewModel();
-  }
-
-  void _moveThoughtToCategory(RetroThought thought, String newCategory, RetroViewModel viewModel) {
-    // This would update the thought's category in the real implementation
-    debugPrint('Moved "${thought.content}" to $newCategory');
-  }
-
-  /// Helper method to convert color name string to Color object
   Color _getColorFromName(String colorName) {
     switch (colorName.toLowerCase()) {
       case 'green':
@@ -393,7 +289,7 @@ class _GroupingPhaseWidgetState extends BaseStatefulPhaseState<GroupingPhaseWidg
       case 'blue':
         return const Color(0xFF3B82F6);
       default:
-        return const Color(0xFF6B7280); // Grey as default
+        return const Color(0xFF6B7280);
     }
   }
 }
@@ -579,4 +475,3 @@ class _GroupCard extends StatelessWidget {
     );
   }
 }
-
